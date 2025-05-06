@@ -1,0 +1,962 @@
+{% extends 'base/base.html' %}
+{% load orcamentos_filters %}
+
+{% block title %}Comparação de Orçamentos{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos gerais */
+.page-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Estilos para os cards */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card-info {
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+    background: #FFFFFF;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+/* Garante que todas as colunas dentro da row tenham a mesma altura */
+.row.g-4 {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -0.75rem;
+}
+
+.row.g-4 > [class*='col-'] {
+    padding: 0.75rem;
+    display: flex;
+}
+
+.card-info .card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.card-info .icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.card-info:hover .icon-wrapper {
+    transform: scale(1.1);
+}
+
+.card-info .icon-wrapper.success {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+.card-info .icon-wrapper.primary {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.card-info .icon-wrapper.info {
+    background-color: rgba(13, 202, 240, 0.1);
+}
+
+.card-info .icon-wrapper.warning {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.card-info .card-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-info .value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0.75rem 0;
+    line-height: 1.2;
+    transition: transform 0.2s ease;
+}
+
+.card-info:hover .value {
+    transform: scale(1.05);
+}
+
+.card-info .value.success {
+    color: #198754;
+}
+
+.card-info .value.primary {
+    color: #0d6efd;
+}
+
+.card-info .value.info {
+    color: #0dcaf0;
+}
+
+.card-info .value.warning {
+    color: #ffc107;
+}
+
+.card-info .subtitle {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Estilos para tabelas */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8125rem;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Estilos para badges */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Estilos para botões */
+.btn {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para alertas */
+.alert {
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+
+.alert-info {
+    background-color: rgba(13, 202, 240, 0.1);
+    color: #055160;
+}
+
+/* Estilos para formulários */
+.form-control,
+.form-select {
+    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    border: 1px solid #dee2e6;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.3s ease-out;
+}
+</style>
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="mb-1">
+            <i class="fas fa-balance-scale me-2"></i> Comparação de Orçamentos
+        </h2>
+        <p class="text-muted mb-0">Compare e analise diferentes orçamentos para tomar a melhor decisão</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'orcamentos:lista' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Voltar
+        </a>
+        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAjuda">
+            <i class="fas fa-question-circle me-1"></i> Ajuda
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="fas fa-info-circle fa-lg me-3"></i>
+            <div>
+                <strong>Dica:</strong> Nesta tela, você pode comparar orçamentos com o mesmo nome para identificar a melhor opção.
+                Os orçamentos são analisados considerando preço, prazo de entrega, forma de pagamento e outros critérios importantes.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário de Busca de Orçamentos -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="fas fa-search me-2"></i> Buscar Orçamentos
+            <small class="text-muted ms-2">Use os filtros abaixo para encontrar orçamentos específicos</small>
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'orcamentos:comparar' %}" class="row g-3">
+            <div class="col-md-4">
+                <label for="id_nome" class="form-label">
+                    <i class="fas fa-tag me-1"></i> Nome do Orçamento
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="nome" id="id_nome" class="form-control" 
+                           value="{{ request.GET.nome|default:'' }}"
+                           placeholder="Digite o nome para buscar...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="id_status" class="form-label">
+                    <i class="fas fa-flag me-1"></i> Status
+                </label>
+                <select name="status" id="id_status" class="form-select">
+                    <option value="" {% if not request.GET.status %}selected{% endif %}>Todos os Status</option>
+                    <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="aprovado" {% if request.GET.status == 'aprovado' %}selected{% endif %}>Aprovado</option>
+                    <option value="rejeitado" {% if request.GET.status == 'rejeitado' %}selected{% endif %}>Rejeitado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="id_data_inicio" class="form-label">
+                    <i class="fas fa-calendar me-1"></i> Data Início
+                </label>
+                <input type="date" name="data_inicio" id="id_data_inicio" class="form-control" 
+                       value="{{ request.GET.data_inicio|default:'' }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i> Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados da busca, se houver -->
+{% if orcamentos_encontrados %}
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i> Orçamentos Encontrados
+                <span class="badge bg-primary ms-2">{{ orcamentos_encontrados|length }}</span>
+            </h5>
+            <small class="text-muted">Selecione os orçamentos que deseja agrupar para comparação</small>
+        </div>
+        <form method="post" action="{% url 'orcamentos:agrupar_orcamentos' %}" id="form-agrupar">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success" id="btn-agrupar" disabled>
+                <i class="fas fa-object-group me-1"></i> Agrupar Selecionados
+                <span class="badge bg-light text-success ms-1" id="contador-selecionados">0</span>
+            </button>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">
+                            <div class="form-check">
+                                <input type="checkbox" id="selecionar-todos" class="form-check-input">
+                                <label class="form-check-label" for="selecionar-todos">Todos</label>
+                            </div>
+                        </th>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Data Criação</th>
+                        <th>Status</th>
+                        <th class="text-end">Valor Total</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orcamento in orcamentos_encontrados %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input checkbox-orcamento" 
+                                       name="orcamentos[]" value="{{ orcamento.id }}"
+                                       form="form-agrupar">
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-medium">#{{ orcamento.id }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-invoice-dollar me-2 text-muted"></i>
+                                {{ orcamento.nome }}
+                            </div>
+                        </td>
+                        <td>
+                            <i class="far fa-calendar me-1 text-muted"></i>
+                            {{ orcamento.data_criacao|date:'d/m/Y H:i' }}
+                        </td>
+                        <td>
+                            {% if orcamento.status == 'pendente' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i> Pendente
+                                </span>
+                            {% elif orcamento.status == 'aprovado' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i> Aprovado
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i> Rejeitado
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">
+                            R$ {{ orcamento.total|floatformat:2 }}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'orcamentos:detalhe' orcamento.id %}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               data-bs-toggle="tooltip" 
+                               title="Visualizar Detalhes">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.checkbox-orcamento');
+    const selectAll = document.getElementById('selecionar-todos');
+    const btnAgrupar = document.getElementById('btn-agrupar');
+    const contadorSelecionados = document.getElementById('contador-selecionados');
+    
+    function updateButtonState() {
+        const checked = document.querySelectorAll('.checkbox-orcamento:checked');
+        btnAgrupar.disabled = checked.length < 2;
+        contadorSelecionados.textContent = checked.length;
+    }
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        updateButtonState();
+    });
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateButtonState);
+    });
+    
+    // Inicializar tooltips do Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endif %}
+
+<!-- Grupos de Orçamentos para comparação -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="fas fa-layer-group me-2"></i> Grupos de Orçamentos
+        {% if grupos %}
+            <span class="badge bg-primary ms-2">{{ grupos|length }}</span>
+        {% endif %}
+    </h4>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Ordenar por Nome">
+            <i class="fas fa-sort-alpha-down"></i>
+        </button>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Ordenar por Valor">
+            <i class="fas fa-sort-numeric-down"></i>
+        </button>
+    </div>
+</div>
+
+{% if grupos %}
+    {% for grupo in grupos %}
+        <div class="card mb-4 grupo-orcamento">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="fas fa-folder-open me-2 text-primary"></i>
+                            {{ grupo.nome }}
+                            <span class="badge bg-secondary ms-2">{{ grupo.quantidade_orcamentos }} orçamentos</span>
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <span class="text-success me-3">
+                            <i class="fas fa-money-bill-wave me-1"></i>
+                            Economia: R$ {{ grupo.economia|floatformat:2 }}
+                            <small class="badge bg-success ms-1">{{ grupo.economia_percentual|floatformat:1 }}%</small>
+                        </span>
+                        <button class="btn btn-outline-primary" type="button" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalAnalise{{ forloop.counter }}">
+                            <i class="fas fa-chart-bar me-1"></i> Análise Detalhada
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Cards de Resumo -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card card-info">
+                            <div class="card-body">
+                                <div class="icon-wrapper success">
+                                    <i class="fas fa-money-bill-wave fa-lg text-success"></i>
+                                </div>
+                                <h6 class="card-title">Melhor Preço</h6>
+                                <div class="value success">R$ {{ grupo.orcamento_melhor.total|floatformat:2 }}</div>
+                                <div class="subtitle">
+                                    <i class="fas fa-hashtag me-1"></i>
+                                    Orçamento #{{ grupo.orcamento_melhor.id }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card card-info">
+                            <div class="card-body">
+                                <div class="icon-wrapper primary">
+                                    <i class="fas fa-percentage fa-lg text-primary"></i>
+                                </div>
+                                <h6 class="card-title">Economia Total</h6>
+                                <div class="value primary">R$ {{ grupo.economia|floatformat:2 }}</div>
+                                <div class="subtitle">
+                                    <i class="fas fa-chart-line me-1"></i>
+                                    {{ grupo.economia_percentual|floatformat:1 }}% de economia
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card card-info">
+                            <div class="card-body">
+                                <div class="icon-wrapper info">
+                                    <i class="fas fa-clock fa-lg text-info"></i>
+                                </div>
+                                <h6 class="card-title">Menor Prazo</h6>
+                                {% with menor_prazo=grupo.orcamentos|dictsort:"data_entrega_prevista"|first %}
+                                <div class="value info">
+                                    {% if menor_prazo.data_entrega_prevista %}
+                                        {{ menor_prazo.data_entrega_prevista|date:'d/m/Y' }}
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </div>
+                                <div class="subtitle">
+                                    <i class="fas fa-hashtag me-1"></i>
+                                    Orçamento #{{ menor_prazo.id }}
+                                </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card card-info">
+                            <div class="card-body">
+                                <div class="icon-wrapper warning">
+                                    <i class="fas fa-check-circle fa-lg text-warning"></i>
+                                </div>
+                                <h6 class="card-title">Status</h6>
+                                {% with aprovados=grupo.orcamentos|filter_status:"aprovado" %}
+                                <div class="value warning">{{ aprovados|length }}</div>
+                                <div class="subtitle">
+                                    <i class="fas fa-file-alt me-1"></i>
+                                    Orçamentos Aprovados
+                                </div>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Orçamentos -->
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data Criação</th>
+                                <th>Status</th>
+                                <th>Forma Pagamento</th>
+                                <th>Data Entrega</th>
+                                <th class="text-end">Valor Total</th>
+                                <th>Melhor Opção</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for orcamento in grupo.orcamentos %}
+                                <tr {% if orcamento.id == grupo.orcamento_melhor.id %}class="table-success"{% endif %}>
+                                    <td>
+                                        <span class="fw-medium">#{{ orcamento.id }}</span>
+                                    </td>
+                                    <td>
+                                        <i class="far fa-calendar me-1 text-muted"></i>
+                                        {{ orcamento.data_criacao|date:'d/m/Y H:i' }}
+                                    </td>
+                                    <td>
+                                        {% if orcamento.status == 'pendente' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i> Pendente
+                                            </span>
+                                        {% elif orcamento.status == 'aprovado' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i> Aprovado
+                                            </span>
+                                            {% if orcamento.id == grupo.orcamento_melhor.id %}
+                                                <span class="badge bg-info ms-1">
+                                                    <i class="fas fa-award me-1"></i>Melhor Preço
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning ms-1" 
+                                                      data-bs-toggle="tooltip" 
+                                                      title="{{ orcamento.justificativa.texto }}">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    Aprovado com Justificativa
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i> Rejeitado
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-money-bill-wave me-1 text-muted"></i>
+                                        {% if orcamento.forma_pagamento == 'avista' %}
+                                            À Vista
+                                        {% elif orcamento.forma_pagamento == '30dias' %}
+                                            30 Dias
+                                        {% elif orcamento.forma_pagamento == '60dias' %}
+                                            60 Dias
+                                        {% elif orcamento.forma_pagamento == '90dias' %}
+                                            90 Dias
+                                        {% elif orcamento.forma_pagamento == 'parcelado' %}
+                                            Parcelado
+                                        {% elif orcamento.forma_pagamento == 'outros' %}
+                                            Outros
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-calendar-alt me-1 text-muted"></i>
+                                        {% if orcamento.data_entrega_prevista %}
+                                            {{ orcamento.data_entrega_prevista|date:'d/m/Y' }}
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end fw-bold {% if orcamento.id == grupo.orcamento_melhor.id %}text-success{% endif %}">
+                                        R$ {{ orcamento.total|floatformat:2 }}
+                                        {% if orcamento.id == grupo.orcamento_melhor.id %}
+                                            <i class="fas fa-check-circle text-success ms-1" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Melhor Preço"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if orcamento.melhor_orcamento %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-trophy me-1"></i> Selecionado
+                                            </span>
+                                        {% else %}
+                                            <form method="post" action="{% url 'orcamentos:definir_melhor' %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="orcamento_id" value="{{ orcamento.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-trophy me-1"></i> Definir como Melhor
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group">
+                                            <a href="{% url 'orcamentos:detalhe' orcamento.id %}" 
+                                               class="btn btn-sm btn-outline-primary"
+                                               data-bs-toggle="tooltip"
+                                               title="Visualizar Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if orcamento.status == 'pendente' %}
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-success"
+                                                        onclick="aprovarOrcamento({{ orcamento.id }}, {{ orcamento.total }}, {{ grupo.orcamento_melhor.total }})"
+                                                        data-bs-toggle="tooltip"
+                                                        title="Aprovar Orçamento">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5>Nenhum grupo de orçamentos encontrado</h5>
+            <p class="text-muted mb-0">
+                Use os filtros acima para buscar orçamentos ou agrupe orçamentos existentes para comparação.
+            </p>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Modal de Análise Detalhada -->
+{% for grupo in grupos %}
+<div class="modal fade" id="modalAnalise{{ forloop.counter }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Análise Detalhada - {{ grupo.nome }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Gráfico de Comparação de Preços -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Comparação de Preços
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Orçamento</th>
+                                        <th>Valor Total</th>
+                                        <th>Diferença do Menor Preço</th>
+                                        <th>Forma de Pagamento</th>
+                                        <th>Prazo de Entrega</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for orcamento in grupo.orcamentos %}
+                                    <tr {% if orcamento.id == grupo.orcamento_melhor.id %}class="table-success"{% endif %}>
+                                        <td>#{{ orcamento.id }}</td>
+                                        <td>R$ {{ orcamento.total|floatformat:2 }}</td>
+                                        <td>
+                                            {% if orcamento.id == grupo.orcamento_melhor.id %}
+                                                <span class="text-success">
+                                                    <i class="fas fa-check-circle"></i> Menor Preço
+                                                </span>
+                                            {% else %}
+                                                <span class="text-danger">
+                                                    + R$ {{ orcamento.total|subtract:grupo.orcamento_melhor.total|floatformat:2 }}
+                                                    ({{ orcamento.total|percentage_difference:grupo.orcamento_melhor.total|floatformat:1 }}%)
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if orcamento.forma_pagamento == 'avista' %}
+                                                À Vista
+                                            {% elif orcamento.forma_pagamento == '30dias' %}
+                                                30 Dias
+                                            {% elif orcamento.forma_pagamento == '60dias' %}
+                                                60 Dias
+                                            {% elif orcamento.forma_pagamento == '90dias' %}
+                                                90 Dias
+                                            {% elif orcamento.forma_pagamento == 'parcelado' %}
+                                                Parcelado
+                                            {% else %}
+                                                Outros
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ orcamento.data_entrega_prevista|date:'d/m/Y'|default:'--' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalhes dos Itens -->
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Comparação de Itens
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        {% for orcamento in grupo.orcamentos %}
+                                        <th class="text-end">
+                                            #{{ orcamento.id }}
+                                            {% if orcamento.id == grupo.orcamento_melhor.id %}
+                                                <i class="fas fa-trophy text-warning ms-1" data-bs-toggle="tooltip" title="Melhor Preço"></i>
+                                            {% endif %}
+                                        </th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in grupo.itens_comparacao %}
+                                    <tr>
+                                        <td>{{ item.descricao }}</td>
+                                        {% for preco in item.precos %}
+                                        <td class="text-end {% if preco.melhor_preco %}text-success fw-bold{% endif %}">
+                                            R$ {{ preco.valor|floatformat:2 }}
+                                            {% if preco.melhor_preco %}
+                                                <i class="fas fa-check-circle text-success ms-1"></i>
+                                            {% endif %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal de Ajuda -->
+<div class="modal fade" id="modalAjuda" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Como usar a Comparação de Orçamentos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-search fa-2x text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6>1. Busque Orçamentos</h6>
+                                <p class="text-muted">Use os filtros para encontrar orçamentos específicos por nome, status ou data.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-object-group fa-2x text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6>2. Agrupe Orçamentos</h6>
+                                <p class="text-muted">Selecione dois ou mais orçamentos e clique em "Agrupar Selecionados".</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-balance-scale fa-2x text-info"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6>3. Compare Orçamentos</h6>
+                                <p class="text-muted">Analise as diferenças de preço, prazo e condições entre os orçamentos.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle fa-2x text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6>4. Tome Decisões</h6>
+                                <p class="text-muted">Aprove o melhor orçamento baseado na análise comparativa.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Inicializar tooltips do Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+let orcamentoIdAtual = null;
+
+function aprovarOrcamento(orcamentoId, valorOrcamento, melhorValor) {
+    orcamentoIdAtual = orcamentoId;
+    
+    // Se não for o melhor preço, mostrar modal de justificativa
+    if (valorOrcamento > melhorValor) {
+        const modalJustificativa = new bootstrap.Modal(document.getElementById('modalJustificativa'));
+        modalJustificativa.show();
+    } else {
+        // Se for o melhor preço, aprovar direto
+        enviarAprovacao();
+    }
+}
+
+function confirmarAprovacao() {
+    const justificativa = document.getElementById('justificativa').value.trim();
+    if (!justificativa) {
+        alert('Por favor, preencha a justificativa.');
+        return;
+    }
+    enviarAprovacao(justificativa);
+}
+
+function enviarAprovacao(justificativa = null) {
+    const formData = new FormData();
+    if (justificativa) {
+        formData.append('justificativa', justificativa);
+    }
+    
+    fetch(`/orcamentos/${orcamentoIdAtual}/aprovar/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Fechar modal se estiver aberto
+            const modalJustificativa = bootstrap.Modal.getInstance(document.getElementById('modalJustificativa'));
+            if (modalJustificativa) {
+                modalJustificativa.hide();
+            }
+            
+            // Redirecionar para atualizar a página
+            window.location.href = data.redirect_url;
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Ocorreu um erro ao processar a solicitação.');
+    });
+}
+</script>
+
+{% endblock %} 

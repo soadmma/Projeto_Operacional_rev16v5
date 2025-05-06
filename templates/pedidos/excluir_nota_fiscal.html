@@ -1,0 +1,135 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Excluir Nota Fiscal #{{ nf.numero_nfe }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Início</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'pedidos:lista' %}">Pedidos</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'pedidos:detalhes' pk=pedido.id %}">Pedido #{{ pedido.id }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'pedidos:nota_fiscal_detalhes' nf_id=nf.id %}">Nota Fiscal #{{ nf.numero_nfe }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Excluir</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Confirmar Exclusão de Nota Fiscal
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h5 class="alert-heading">Atenção!</h5>
+                <p>Você está prestes a excluir a nota fiscal <strong>#{{ nf.numero_nfe }}</strong> 
+                   emitida por <strong>{{ nf.razao_social_emitente }}</strong> 
+                   em <strong>{{ nf.data_emissao|date:"d/m/Y H:i" }}</strong>.</p>
+                <p>Esta operação <strong>não pode ser desfeita</strong>. Todos os dados relacionados a esta nota fiscal 
+                   serão permanentemente removidos do sistema.</p>
+                <hr>
+                <p class="mb-0">Chave da NF-e: <code>{{ nf.chave_nfe }}</code></p>
+            </div>
+
+            <div class="row my-4">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">Dados da Nota Fiscal</div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                    <th>Número NF:</th>
+                                    <td>{{ nf.numero_nfe }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Valor Total:</th>
+                                    <td>R$ {{ nf.valor_total|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Emitente:</th>
+                                    <td>{{ nf.razao_social_emitente }}</td>
+                                </tr>
+                                <tr>
+                                    <th>CNPJ Emitente:</th>
+                                    <td>{{ nf.cnpj_emitente }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Data de Emissão:</th>
+                                    <td>{{ nf.data_emissao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Data de Importação:</th>
+                                    <td>{{ nf.data_importacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">Dados do Pedido</div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                    <th>Pedido:</th>
+                                    <td>
+                                        <a href="{% url 'pedidos:detalhes' pk=pedido.id %}">
+                                            #{{ pedido.id }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Status do Pedido:</th>
+                                    <td>
+                                        {% if pedido.status == 'pedido_enviado' %}
+                                        <span class="badge bg-primary">Em Entrega</span>
+                                        {% elif pedido.status == 'entregue' %}
+                                        <span class="badge bg-success">Entregue</span>
+                                        {% elif pedido.status == 'aprovado' %}
+                                        <span class="badge bg-info">Aprovado</span>
+                                        {% elif pedido.status == 'pendente' %}
+                                        <span class="badge bg-warning text-dark">Pendente</span>
+                                        {% elif pedido.status == 'cancelado' %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Contrato:</th>
+                                    <td>{{ pedido.escola.nome }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Empresa:</th>
+                                    <td>{{ pedido.escola.empresa|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fornecedor:</th>
+                                    <td>{{ pedido.fornecedor.razao_social|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'pedidos:nota_fiscal_detalhes' nf_id=nf.id %}" class="btn btn-secondary me-2">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Confirmar Exclusão
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

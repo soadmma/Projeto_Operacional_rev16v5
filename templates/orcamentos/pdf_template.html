@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Orçamento #{{ orcamento.id }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        .orcamento-info {
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total {
+            font-weight: bold;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pendente { background-color: #ffeeba; color: #856404; }
+        .status-aprovado { background-color: #d4edda; color: #155724; }
+        .status-rejeitado { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ STATIC_URL }}images/CyberGo.jpg" alt="CyberGo" class="logo">
+        <h1>ORÇAMENTO #{{ orcamento.id }}</h1>
+    </div>
+
+    <div class="orcamento-info">
+        <h3>Informações do Orçamento</h3>
+        <table>
+            <tr>
+                <th width="30%">Nome:</th>
+                <td>{{ orcamento.nome }}</td>
+            </tr>
+            <tr>
+                <th>Status:</th>
+                <td>
+                    <span class="status status-{{ orcamento.status }}">
+                        {% if orcamento.status == 'pendente' %}
+                            Pendente
+                        {% elif orcamento.status == 'aprovado' %}
+                            Aprovado
+                        {% else %}
+                            Rejeitado
+                        {% endif %}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <th>Data de Criação:</th>
+                <td>{{ orcamento.data_criacao|date:'d/m/Y H:i' }}</td>
+            </tr>
+            <tr>
+                <th>Forma de Pagamento:</th>
+                <td>
+                    {% if orcamento.forma_pagamento == 'avista' %}
+                        À Vista
+                    {% elif orcamento.forma_pagamento == '30dias' %}
+                        30 Dias
+                    {% elif orcamento.forma_pagamento == '60dias' %}
+                        60 Dias
+                    {% elif orcamento.forma_pagamento == '90dias' %}
+                        90 Dias
+                    {% elif orcamento.forma_pagamento == 'parcelado' %}
+                        Parcelado
+                    {% elif orcamento.forma_pagamento == 'outros' %}
+                        Outros
+                    {% else %}
+                        Não informada
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Data Prevista de Entrega:</th>
+                <td>
+                    {% if orcamento.data_entrega_prevista %}
+                        {{ orcamento.data_entrega_prevista|date:'d/m/Y' }}
+                    {% else %}
+                        Não informada
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3>Itens do Orçamento</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Produto</th>
+                <th class="text-center">Quantidade</th>
+                <th class="text-right">Valor Unitário</th>
+                <th class="text-right">Total</th>
+                <th>Fornecedor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in itens %}
+            <tr>
+                <td>{{ item.produto.nome }}</td>
+                <td class="text-center">{{ item.quantidade }}</td>
+                <td class="text-right">R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                <td class="text-right">R$ {{ item.total|floatformat:2 }}</td>
+                <td>{{ item.fornecedor.razao_social|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-right total">Total:</td>
+                <td class="text-right total">R$ {{ orcamento.total|floatformat:2 }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    {% if orcamento.status != 'pendente' %}
+        <div class="aprovacao-info">
+            <h3>Informações de {% if orcamento.status == 'aprovado' %}Aprovação{% else %}Rejeição{% endif %}</h3>
+            <table>
+                <tr>
+                    <th width="30%">Data:</th>
+                    <td>{{ orcamento.data_aprovacao|date:'d/m/Y H:i' }}</td>
+                </tr>
+                <tr>
+                    <th>Usuário:</th>
+                    <td>
+                        {% if orcamento.usuario_aprovador %}
+                            {{ orcamento.usuario_aprovador.get_full_name|default:orcamento.usuario_aprovador.username }}
+                        {% else %}
+                            Não informado
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if orcamento.justificativa %}
+                <tr>
+                    <th>Justificativa:</th>
+                    <td>{{ orcamento.justificativa }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    {% endif %}
+</body>
+</html> 

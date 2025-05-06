@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CyberGo{% endblock %}</title>
+    
+    <!-- Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- CSS Base -->
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #f72585;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .content {
+            flex-grow: 1;
+            padding-bottom: 20px;
+        }
+        
+        .top-bar {
+            background-color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .footer {
+            margin-top: auto;
+            border-top: 1px solid #e9ecef;
+            padding: 15px 0;
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+        }
+        
+        /* Cores para elementos de status */
+        .badge-pendente { background-color: #ffc107; color: #212529; }
+        .badge-aprovado { background-color: #0dcaf0; }
+        .badge-pedido_enviado { background-color: #0d6efd; }
+        .badge-entregue { background-color: #198754; }
+        .badge-cancelado { background-color: #dc3545; }
+        
+        /* Estilos para cards e tabelas */
+        .card { 
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header { 
+            font-weight: 500;
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .table th { 
+            font-weight: 500;
+        }
+        
+        /* Estilo para breadcrumb */
+        .breadcrumb {
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Utilitários */
+        .text-primary { color: var(--primary-color) !important; }
+        .text-secondary { color: var(--secondary-color) !important; }
+        .bg-primary { background-color: var(--primary-color) !important; }
+        .bg-secondary { background-color: var(--secondary-color) !important; }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Cabeçalho -->
+    <header class="top-bar">
+        <div class="d-flex align-items-center">
+            <a href="{% url 'core:home' %}" class="navbar-brand d-flex align-items-center">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="me-2" style="height: 40px;">
+                <span>CyberGo</span>
+            </a>
+        </div>
+        
+        <div class="user-info">
+            {% if request.user.is_authenticated %}
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar">
+                            {{ request.user.first_name|slice:":1" }}{{ request.user.last_name|slice:":1" }}
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><span class="dropdown-item-text">{{ request.user.get_full_name|default:request.user.username }}</span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'core:home' %}">Início</a></li>
+                        <li><a class="dropdown-item" href="{% url 'pedidos:lista' %}">Pedidos</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'usuarios:logout' %}">Sair</a></li>
+                    </ul>
+                </div>
+            {% else %}
+                <a href="{% url 'usuarios:login' %}" class="btn btn-outline-primary btn-sm">Login</a>
+            {% endif %}
+        </div>
+    </header>
+    
+    <!-- Conteúdo -->
+    <main class="content">
+        <div class="container-fluid">
+            {% block breadcrumb %}{% endblock %}
+            
+            <!-- Mensagens de erro/sucesso -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <!-- Rodapé -->
+    <footer class="footer text-center">
+        <div class="container">
+            <span class="text-muted">CyberGo &copy; {% now "Y" %}</span>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Inicializar tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+            
+            // Autodismiss para alerts
+            var alertList = document.querySelectorAll('.alert-dismissible')
+            alertList.forEach(function (alert) {
+                setTimeout(function() {
+                    var bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

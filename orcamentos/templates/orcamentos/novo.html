@@ -1,0 +1,61 @@
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Produto</label>
+                            <select class="form-select" name="produto_0" id="produto_0">
+                                <option value="">Selecione um produto</option>
+                                {% for produto in produtos %}
+                                    <option value="{{ produto.id }}">{{ produto.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Ou digite manualmente</label>
+                            <input type="text" class="form-control" name="produto_manual_0" id="produto_manual_0" placeholder="Nome do produto">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" name="quantidade_0" id="quantidade_0" min="1" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Valor Unitário</label>
+                            <input type="number" class="form-control" name="valor_unitario_0" id="valor_unitario_0" step="0.01" min="0" required>
+                        </div>
+                    </div> 
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addItemBtn = document.getElementById('addItem');
+            const itemsContainer = document.getElementById('itemsContainer');
+            let itemCount = 1;
+
+            addItemBtn.addEventListener('click', function() {
+                const newItem = document.createElement('div');
+                newItem.className = 'row mb-3';
+                newItem.innerHTML = `
+                    <div class="col-md-4">
+                        <label class="form-label">Produto</label>
+                        <select class="form-select" name="produto_${itemCount}" id="produto_${itemCount}">
+                            <option value="">Selecione um produto</option>
+                            {% for produto in produtos %}
+                                <option value="{{ produto.id }}">{{ produto.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ou digite manualmente</label>
+                        <input type="text" class="form-control" name="produto_manual_${itemCount}" id="produto_manual_${itemCount}" placeholder="Nome do produto">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" class="form-control" name="quantidade_${itemCount}" id="quantidade_${itemCount}" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Valor Unitário</label>
+                        <input type="number" class="form-control" name="valor_unitario_${itemCount}" id="valor_unitario_${itemCount}" step="0.01" min="0" required>
+                    </div>
+                `;
+                itemsContainer.appendChild(newItem);
+                itemCount++;
+            });
+        });
+    </script> 

@@ -1,0 +1,7 @@
+Iniciando geração de pedidos recorrentes - Data atual: 02/05/2025
+Processando fornecedor: KALUNGA
+DEBUG: Salvando pedido ID=novo, pedido_recorrente=False
+Pedido recorrente #15 gerado com sucesso baseado no pedido #14
+Pedido #11 já possui um pedido recorrente gerado neste mês.
+Pedido #10 já possui um pedido recorrente gerado neste mês.
+Geração concluída. 1 pedidos recorrentes gerados com sucesso.

@@ -1,0 +1,63 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Excluir Todos os Contratos/Escolas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-trash me-2"></i>Excluir Todos os Contratos/Escolas</h2>
+    <div>
+        <a href="{% url 'escolas:lista' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Voltar para Lista
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>ATENÇÃO! Esta é uma operação destrutiva!</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <h5><i class="bi bi-exclamation-circle-fill me-2"></i>Você está prestes a excluir <strong>TODOS os {{ total_escolas }} contratos/escolas</strong> cadastrados no sistema!</h5>
+            <p>Esta ação <strong>NÃO PODE SER DESFEITA</strong> depois de confirmada.</p>
+            <p>Um backup será criado automaticamente, mas você será responsável por restaurar os dados se necessário.</p>
+        </div>
+        
+        <div class="alert alert-warning">
+            <h6><i class="bi bi-info-circle me-2"></i>Antes de continuar:</h6>
+            <ul>
+                <li>Todos os contratos/escolas serão excluídos permanentemente do banco de dados.</li>
+                <li>A numeração dos contratos/escolas será reiniciada a partir do número 1.</li>
+                <li>Se existirem pedidos referenciando contratos/escolas, a operação será cancelada.</li>
+                <li>Esta operação pode afetar relatórios e históricos no sistema.</li>
+            </ul>
+        </div>
+        
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="confirmaEntendi" required>
+                <label class="form-check-label" for="confirmaEntendi">
+                    Eu entendo que esta ação é irreversível e que serei responsável por restaurar dados a partir do backup se necessário.
+                </label>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'escolas:lista' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <button type="submit" name="confirmar_exclusao" class="btn btn-danger" id="btnConfirmar" disabled>
+                    <i class="bi bi-trash me-1"></i> Confirmar Exclusão de Todos os Contratos/Escolas
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Habilitar botão de confirmação apenas quando a caixa de seleção for marcada
+    document.getElementById('confirmaEntendi').addEventListener('change', function() {
+        document.getElementById('btnConfirmar').disabled = !this.checked;
+    });
+</script>
+{% endblock %} 

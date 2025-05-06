@@ -1,0 +1,301 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Cards de Resumo -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Fornecedores</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ fornecedores|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-truck fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Fornecedores Ativos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ fornecedores_ativos }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Fornecedores Inativos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ fornecedores_inativos }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Cidades Diferentes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ cidades_diferentes }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-map-marker-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Título e Botão -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-0">
+                                <i class="fas fa-truck me-2 text-primary"></i>
+                                Fornecedores
+                            </h2>
+                            <p class="text-muted mb-0">Gerencie seus fornecedores de forma eficiente</p>
+                        </div>
+                        <a href="{% url 'fornecedores:criar_fornecedor' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Novo Fornecedor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Fornecedores -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tabelaFornecedores">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Razão Social</th>
+                                    <th>Nome Fantasia</th>
+                                    <th>CNPJ/CPF</th>
+                                    <th>Localização</th>
+                                    <th>Contatos</th>
+                                    <th>Pessoa de Contato</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fornecedor in fornecedores %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ fornecedor.razao_social }}</div>
+                                        {% if fornecedor.website %}
+                                        <small class="text-muted">
+                                            <a href="{{ fornecedor.website }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-globe me-1"></i>Website
+                                            </a>
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ fornecedor.nome }}</td>
+                                    <td>
+                                        <div>{{ fornecedor.cnpj }}</div>
+                                        {% if fornecedor.inscricao_estadual %}
+                                        <small class="text-muted">IE: {{ fornecedor.inscricao_estadual }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ fornecedor.cidade }}/{{ fornecedor.estado }}</div>
+                                        <small class="text-muted">{{ fornecedor.cep }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <div class="mb-1">
+                                                <i class="fas fa-phone text-primary me-2"></i>
+                                                <span>{{ fornecedor.telefone }}</span>
+                                            </div>
+                                            {% if fornecedor.telefone_secundario %}
+                                            <div class="mb-1">
+                                                <i class="fas fa-phone-alt text-secondary me-2"></i>
+                                                <span>{{ fornecedor.telefone_secundario }}</span>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <i class="fas fa-envelope text-primary me-2"></i>
+                                                <a href="mailto:{{ fornecedor.email }}" class="text-decoration-none">
+                                                    {{ fornecedor.email }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if fornecedor.pessoa_contato %}
+                                        <div class="fw-bold">{{ fornecedor.pessoa_contato }}</div>
+                                        {% if fornecedor.cargo_contato %}
+                                        <small class="text-muted">{{ fornecedor.cargo_contato }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if fornecedor.tipo_fornecedor == 'FIXO' %}
+                                        <span class="badge bg-primary rounded-pill">
+                                            <i class="fas fa-clipboard-list me-1"></i>Fixo
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark rounded-pill">
+                                            <i class="fas fa-random me-1"></i>Esporádico
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if fornecedor.ativo %}
+                                        <span class="badge bg-success rounded-pill">
+                                            <i class="fas fa-check-circle me-1"></i>Ativo
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger rounded-pill">
+                                            <i class="fas fa-times-circle me-1"></i>Inativo
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group">
+                                            <a href="{% url 'fornecedores:editar_fornecedor' fornecedor.id %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="Editar">
+                                               
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'fornecedores:excluir_fornecedor' fornecedor.id %}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               onclick="return confirm('Tem certeza que deseja excluir este fornecedor?')" 
+                                               title="Excluir">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                            <p class="mb-0">Nenhum fornecedor cadastrado.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        background-color: #f8f9fa;
+    }
+    .badge {
+        padding: 0.5em 0.75em;
+    }
+    .border-left-primary {
+        border-left: 4px solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a !important;
+    }
+    .border-left-warning {
+        border-left: 4px solid #f6c23e !important;
+    }
+    .border-left-info {
+        border-left: 4px solid #36b9cc !important;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    $('#tabelaFornecedores').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
+        },
+        responsive: true,
+        order: [[0, 'asc']],
+        pageLength: 10,
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        columnDefs: [
+            { orderable: false, targets: -1 } // Desabilita ordenação na coluna de ações
+        ]
+    });
+});
+</script>
+{% endblock %}

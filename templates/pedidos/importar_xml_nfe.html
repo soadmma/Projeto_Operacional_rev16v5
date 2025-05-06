@@ -1,0 +1,78 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}XML Individual - CyberGo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-file-invoice me-2"></i>
+                {% if pedido %}
+                XML Individual - Pedido #{{ pedido.id }}
+                {% else %}
+                XML Individual
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-info-circle me-2 text-primary"></i>
+                                Instruções
+                            </h5>
+                            <p>Carregue o arquivo XML da nota fiscal para importar automaticamente os dados.</p>
+                            <ul>
+                                <li>O sistema tentará identificar automaticamente o número do pedido no XML.</li>
+                                <li>A busca é feita no campo "Informações Complementares" (infCpl) da nota.</li>
+                                <li>O número do pedido deve estar em um formato reconhecível, como "Pedido #123", "Ordem: 123".</li>
+                                <li>Se o pedido não for encontrado automaticamente, você será redirecionado para selecioná-lo manualmente.</li>
+                                <li>Apenas pedidos com status "Aprovado" serão alterados automaticamente para "Pedido Enviado" ao importar a nota fiscal.</li>
+                                <li>Se o pedido já tiver sido entregue, você deverá atualizar o status manualmente para "Entregue".</li>
+                                <li>O sistema também extrairá automaticamente a previsão de entrega do fornecedor, se disponível no campo "Informações Complementares".</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="xml_file" class="form-label">Arquivo XML da Nota Fiscal</label>
+                    <input type="file" class="form-control" id="xml_file" name="xml_file" accept=".xml" required>
+                    <div class="form-text">Selecione o arquivo XML da nota fiscal.</div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    {% if pedido %}
+                        <a href="{% url 'pedidos:detalhes' pk=pedido.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar para o Pedido
+                        </a>
+                    {% else %}
+                        <a href="{% url 'pedidos:lista' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar para Lista de Pedidos
+                        </a>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Importar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

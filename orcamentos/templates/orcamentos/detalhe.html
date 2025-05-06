@@ -1,0 +1,9 @@
+                    <td>{{ item.quantidade }}</td>
+                    <td>R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                    <td>
+                        {% if item.produto %}
+                            {{ item.produto.nome }}
+                        {% else %}
+                            {{ item.descricao_produto }}
+                        {% endif %} 

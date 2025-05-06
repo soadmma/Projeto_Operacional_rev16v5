@@ -1,0 +1,57 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-link me-2"></i>
+                Selecionar Pedido para Vincular à Nota Fiscal
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Não foi possível identificar automaticamente o pedido no XML da nota fiscal. Por favor, selecione o pedido manualmente da lista abaixo.
+            </div>
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="pedido_id" class="form-label">Selecione o Pedido</label>
+                    <select class="form-select" id="pedido_id" name="pedido_id" required>
+                        <option value="">-- Selecione um pedido --</option>
+                        {% for pedido in pedidos %}
+                            <option value="{{ pedido.id }}">
+                                Pedido #{{ pedido.id }} - {{ pedido.escola.nome }} - 
+                                {{ pedido.data_solicitacao|date:"d/m/Y" }} - 
+                                R$ {{ pedido.valor_total|floatformat:2 }} - 
+                                Status: {{ pedido.get_status_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'pedidos:lista' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Confirmar Seleção
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

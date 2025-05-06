@@ -1,0 +1,7 @@
+# Executar o comando para gerar pedidos recorrentes diariamente às 8:00 da manhã
+# O comando irá verificar internamente os dias configurados para cada fornecedor
+0 8 * * * cd /home/mauricio/Documentos/Projeto_Operacional_rev16v4 && /home/mauricio/Documentos/Projeto_Operacional_rev16v4/venv/bin/python manage.py gerar_pedidos_recorrentes >> /home/mauricio/Documentos/Projeto_Operacional_rev16v4/logs/pedidos_recorrentes.log 2>&1
+
+# Para adicionar este cron ao sistema, execute:
+# crontab -e
+# E adicione a linha acima (com os caminhos corrigidos para seu ambiente) 

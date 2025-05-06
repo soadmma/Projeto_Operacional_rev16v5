@@ -1,0 +1,227 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Novo Orçamento{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="card shadow-lg p-4 w-100" style="max-width: 1000px; border-radius: 2rem; background: linear-gradient(135deg, #f8faff 80%, #e6e6ff 100%);">
+        <div class="text-center mb-4">
+            <div style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #4303f0 60%, #36b9cc 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(67,3,240,0.15);">
+                <i class="fas fa-file-invoice-dollar fa-2x text-white"></i>
+            </div>
+            <h2 class="fw-bold mt-3 mb-1" style="letter-spacing: 1px; color: #4303f0;">Novo Orçamento</h2>
+            <p class="text-muted mb-0">Preencha os dados abaixo para cadastrar um orçamento</p>
+        </div>
+        <form method="post" autocomplete="off" id="formOrcamento">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="id_nome" class="form-label">Nome do Orçamento <span class="text-danger">*</span></label>
+                <input type="text" name="nome" id="id_nome" class="form-control" required placeholder="Ex: Orçamento Maio/2025">
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="id_forma_pagamento" class="form-label">Forma de Pagamento</label>
+                    <select name="forma_pagamento" id="id_forma_pagamento" class="form-select">
+                        <option value="avista">À Vista</option>
+                        <option value="30dias">30 Dias</option>
+                        <option value="60dias">60 Dias</option>
+                        <option value="90dias">90 Dias</option>
+                        <option value="parcelado">Parcelado</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_data_entrega" class="form-label">Data Prevista de Entrega</label>
+                    <input type="date" name="data_entrega_prevista" id="id_data_entrega" class="form-control">
+                </div>
+            </div>
+            
+            <h5 class="fw-semibold mb-3 text-primary"><i class="fas fa-list me-2"></i>Itens do Orçamento</h5>
+            <div id="itens-orcamento">
+                <div class="row g-2 mb-2 item-orcamento">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <select name="produto_0" class="form-select produto-select" required>
+                                <option value="">Selecione um produto</option>
+                                {% for produto in produtos %}
+                                    <option value="{{ produto.id }}" data-preco="{{ produto.valor_unitario }}">{{ produto.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" onclick="alternarInputProduto(this)">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
+                        <input type="text" name="produto_manual_0" class="form-control mt-2 produto-manual d-none" placeholder="Digite o nome do produto">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="quantidade_0" class="form-control quantidade-input" min="1" placeholder="Qtd" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="valor_unitario_0" class="form-control valor-unitario" min="0" step="0.01" placeholder="Valor Unitário" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control total-item" readonly placeholder="Total">
+                    </div>
+                    <div class="col-md-2">
+                        <select name="fornecedor_0" class="form-select">
+                            <option value="">Fornecedor</option>
+                            {% for fornecedor in fornecedores %}
+                                <option value="{{ fornecedor.id }}">{{ fornecedor.razao_social }}{% if fornecedor.nome %} ({{ fornecedor.nome }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="adicionarItem()">
+                    <i class="fas fa-plus"></i> Adicionar Item
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removerItem()">
+                    <i class="fas fa-minus"></i> Remover Último
+                </button>
+            </div>
+            <div class="card bg-light mt-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Total de Itens: <span id="totalItens" class="fw-bold">0</span></h6>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h6 class="mb-3">Valor Total: <span id="valorTotal" class="fw-bold">R$ 0,00</span></h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="{% url 'orcamentos:lista' %}" class="btn btn-secondary px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Voltar para Orçamentos
+                </a>
+                <button type="submit" class="btn btn-primary px-4 shadow-sm" style="font-size: 1.1rem;">
+                    <i class="bi bi-save me-1"></i> Salvar Orçamento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+let itemIndex = 1;
+
+function alternarInputProduto(button) {
+    const row = button.closest('.item-orcamento');
+    const select = row.querySelector('.produto-select');
+    const input = row.querySelector('.produto-manual');
+    
+    if (select.classList.contains('d-none')) {
+        // Voltar para o select
+        select.classList.remove('d-none');
+        input.classList.add('d-none');
+        button.innerHTML = '<i class="fas fa-pen"></i>';
+        select.required = true;
+        input.required = false;
+    } else {
+        // Ir para o input manual
+        select.classList.add('d-none');
+        input.classList.remove('d-none');
+        button.innerHTML = '<i class="fas fa-list"></i>';
+        select.required = false;
+        input.required = true;
+    }
+}
+
+function adicionarItem() {
+    const container = document.getElementById('itens-orcamento');
+    const produtos = `{% for produto in produtos %}<option value="{{ produto.id }}" data-preco="{{ produto.valor_unitario }}">{{ produto.nome }}</option>{% endfor %}`;
+    const fornecedores = `{% for fornecedor in fornecedores %}<option value="{{ fornecedor.id }}">{{ fornecedor.razao_social }}{% if fornecedor.nome %} ({{ fornecedor.nome }}){% endif %}</option>{% endfor %}`;
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 item-orcamento';
+    row.innerHTML = `
+        <div class="col-md-4">
+            <div class="input-group">
+                <select name="produto_${itemIndex}" class="form-select produto-select" required>
+                    <option value="">Selecione um produto</option>
+                    ${produtos}
+                </select>
+                <button type="button" class="btn btn-outline-secondary" onclick="alternarInputProduto(this)">
+                    <i class="fas fa-pen"></i>
+                </button>
+            </div>
+            <input type="text" name="produto_manual_${itemIndex}" class="form-control mt-2 produto-manual d-none" placeholder="Digite o nome do produto">
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="quantidade_${itemIndex}" class="form-control quantidade-input" min="1" placeholder="Qtd" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="valor_unitario_${itemIndex}" class="form-control valor-unitario" min="0" step="0.01" placeholder="Valor Unitário" required>
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control total-item" readonly placeholder="Total">
+        </div>
+        <div class="col-md-2">
+            <select name="fornecedor_${itemIndex}" class="form-select">
+                <option value="">Fornecedor</option>
+                ${fornecedores}
+            </select>
+        </div>
+    `;
+    container.appendChild(row);
+    itemIndex++;
+    adicionarEventos(row);
+}
+
+function removerItem() {
+    const container = document.getElementById('itens-orcamento');
+    if (container.children.length > 1) {
+        container.removeChild(container.lastElementChild);
+        itemIndex--;
+        atualizarTotais();
+    }
+}
+
+function adicionarEventos(row) {
+    const produtoSelect = row.querySelector('.produto-select');
+    const quantidadeInput = row.querySelector('.quantidade-input');
+    const valorUnitarioInput = row.querySelector('.valor-unitario');
+    const totalItemInput = row.querySelector('.total-item');
+
+    produtoSelect.addEventListener('change', function() {
+        const preco = this.options[this.selectedIndex].dataset.preco;
+        if (preco) {
+            valorUnitarioInput.value = preco;
+            calcularTotalItem(row);
+        }
+    });
+
+    quantidadeInput.addEventListener('input', () => calcularTotalItem(row));
+    valorUnitarioInput.addEventListener('input', () => calcularTotalItem(row));
+}
+
+function calcularTotalItem(row) {
+    const quantidade = parseFloat(row.querySelector('.quantidade-input').value) || 0;
+    const valorUnitario = parseFloat(row.querySelector('.valor-unitario').value) || 0;
+    const total = quantidade * valorUnitario;
+    row.querySelector('.total-item').value = total.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    atualizarTotais();
+}
+
+function atualizarTotais() {
+    let totalItens = 0;
+    let valorTotal = 0;
+    
+    document.querySelectorAll('.item-orcamento').forEach(row => {
+        const quantidade = parseFloat(row.querySelector('.quantidade-input').value) || 0;
+        const valorUnitario = parseFloat(row.querySelector('.valor-unitario').value) || 0;
+        totalItens += quantidade;
+        valorTotal += quantidade * valorUnitario;
+    });
+    
+    document.getElementById('totalItens').textContent = totalItens;
+    document.getElementById('valorTotal').textContent = valorTotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+}
+
+// Adicionar eventos ao primeiro item
+document.addEventListener('DOMContentLoaded', function() {
+    adicionarEventos(document.querySelector('.item-orcamento'));
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,98 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Importar XMLs de NF-e em Massa - CyberGo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-2 bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-code me-2"></i>
+                            Importar XMLs de Notas Fiscais em Massa
+                        </h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Instruções:</strong> 
+                        <ul class="mb-0 mt-2">
+                            <li>Selecione múltiplos arquivos XML (.xml) de notas fiscais para importação em massa.</li>
+                            <li>O sistema tentará associar cada nota fiscal ao pedido correspondente através do número informado no campo "Informações Complementares" (infCpl).</li>
+                            <li>As notas que forem associadas com sucesso serão incluídas automaticamente nos pedidos.</li>
+                            <li>As notas que não forem associadas serão listadas para resolução manual.</li>
+                            <li>O sistema também tentará extrair a data prevista de entrega pelo fornecedor do campo "Informações Complementares".</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" action="{% url 'pedidos:processar_xml_nfe_massa' %}" enctype="multipart/form-data" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="xmlFiles" class="form-label"><strong>Selecionar arquivos XML</strong></label>
+                            <input class="form-control form-control-lg" id="xmlFiles" type="file" name="xml_files" multiple accept=".xml" required>
+                            <small class="text-muted">É possível selecionar múltiplos arquivos de uma só vez.</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="1" id="atualizar_previsao_entrega" name="atualizar_previsao_entrega" checked>
+                                <label class="form-check-label" for="atualizar_previsao_entrega">
+                                    <strong>Atualizar previsão de entrega do fornecedor</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">O sistema tentará encontrar datas no formato DD/MM/YYYY ou YYYY-MM-DD no campo "Informações Complementares" (infCpl) próximas a termos como "PREVISÃO ENTREGA", "PREV.ENTREGA", "DATA ENTREGA", etc.</small>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'pedidos:lista' %}" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i> Voltar para Pedidos
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-1"></i> Processar XMLs
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header pb-2">
+                    <h5 class="mb-0">Dicas para melhor associação de XMLs aos pedidos</h5>
+                </div>
+                <div class="card-body">
+                    <p>Para garantir que o sistema associe corretamente as notas fiscais aos pedidos, informe os fornecedores que incluam as seguintes informações no campo "Informações Complementares" (infCpl) das notas fiscais:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Informação</th>
+                                    <th>Formato recomendado</th>
+                                    <th>Exemplo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Número do Pedido</td>
+                                    <td>"PEDIDO" ou "PEDIDO EXTERNO" seguido do número</td>
+                                    <td>"PEDIDO: 12345" ou "PEDIDO EXTERNO 12345"</td>
+                                </tr>
+                                <tr>
+                                    <td>Previsão de Entrega</td>
+                                    <td>"ENTREGA PREVISTA" ou "PREVISÃO ENTREGA" seguido da data</td>
+                                    <td>"PREVISÃO ENTREGA: 15/06/2025" ou "ENTREGA PREVISTA 2025-06-15"</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

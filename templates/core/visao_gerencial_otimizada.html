@@ -1,0 +1,2385 @@
+{% extends "core/base.html" %}
+{% load static dashboard_extras dashboard_tags math_filters %}
+
+{% block extra_head %}
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<!-- ApexCharts para gráficos otimizados -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- IMPORTANTE: Movemos o carregamento do DataTables para o final, para garantir que ele só seja inicializado quando necessário -->
+
+<style>
+    :root {
+        /* Paleta de cores principal */
+        --primary: #4361ee;
+        --primary-light: #4895ef;
+        --primary-dark: #3a0ca3;
+        --secondary: #f72585;
+        --secondary-light: #ff66b2;
+        --success: #4cc9f0;
+        --warning: #ffd166;
+        --danger: #ef476f;
+        --info: #4895ef;
+        
+        /* Cores neutras */
+        --white: #ffffff;
+        --light: #f8f9fa;
+        --light-gray: #e9ecef;
+        --gray: #6c757d;
+        --dark-gray: #343a40;
+        --dark: #212529;
+    }
+
+    /* Estilo para o dashboard em geral */
+    .dashboard-container {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 60px);
+    }
+
+    /* Cards principais */
+    .stats-card {
+        border-radius: 8px;
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+        backdrop-filter: blur(10px);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-card .card-body {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0.75rem;
+    }
+
+    .stats-card .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
+    .stats-card .stat-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--gray);
+        margin-bottom: 0;
+    }
+
+    .stats-card .stat-icon {
+        display: inline-flex;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        color: white;
+        margin-right: 0.75rem;
+        margin-bottom: 0;
+    }
+
+    .stats-card .stat-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stats-card .trend {
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .stats-card .trend i {
+        margin-right: 0.25rem;
+    }
+
+    .trend-up {
+        color: var(--success);
+    }
+
+    .trend-down {
+        color: var(--danger);
+    }
+
+    .trend-neutral {
+        color: var(--gray);
+    }
+
+    /* Cores dos cards */
+    .bg-gradient-blue {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    }
+
+    .bg-gradient-purple {
+        background: linear-gradient(135deg, #7209b7, #3a0ca3);
+    }
+
+    .bg-gradient-pink {
+        background: linear-gradient(135deg, #f72585, #b5179e);
+    }
+
+    .bg-gradient-teal {
+        background: linear-gradient(135deg, #4cc9f0, #4895ef);
+    }
+
+    .bg-gradient-green {
+        background: linear-gradient(135deg, #2ec4b6, #0cce6b);
+    }
+
+    .bg-gradient-orange {
+        background: linear-gradient(135deg, #ff9e00, #ff7a00);
+    }
+
+    /* Estilos para gráficos */
+    .chart-container {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: var(--dark);
+    }
+
+    /* Estilos para tabelas */
+    .table-container {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .dashboard-table th {
+        border-bottom: 1px solid var(--light-gray);
+        padding: 0.75rem;
+        font-weight: 600;
+        color: var(--dark-gray);
+    }
+
+    .dashboard-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-table tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    /* Filtros */
+    .filters-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .filters-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--dark);
+    }
+
+    /* Loader e mensagens de estado */
+    .dashboard-loader {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+        flex-direction: column;
+    }
+
+    .loader-spinner {
+        width: 3rem;
+        height: 3rem;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary);
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Status indicadores */
+    .status-badge {
+        padding: 0.35rem 0.65rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-badge-warning {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #cc9900;
+    }
+
+    .status-badge-danger {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #b71c1c;
+    }
+
+    .status-badge-success {
+        background-color: rgba(25, 135, 84, 0.2);
+        color: #1b7740;
+    }
+
+    .status-badge-info {
+        background-color: rgba(13, 110, 253, 0.2);
+        color: #0a58ca;
+    }
+
+    /* Adaptações para telas menores */
+    @media (max-width: 767px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+        
+        .stats-card .stat-value {
+            font-size: 1.5rem;
+        }
+        
+        .chart-container, .table-container, .filters-card {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="text-primary mb-4">Visão Gerencial Otimizada</h2>
+    
+    <!-- Controles de Filtro -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="filtro-empresa">Empresa</label>
+                                <select id="filtro-empresa" class="form-select">
+                                    <option value="">Todas as empresas</option>
+                                    {% for empresa in empresas %}
+                                    <option value="{{ empresa.empresa }}">{{ empresa.empresa }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="filtro-contrato">Contrato</label>
+                                <select id="filtro-contrato" class="form-select">
+                                    <option value="">Todos os contratos</option>
+                                    <!-- Será preenchido via JavaScript quando uma empresa for selecionada -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="filtro-periodo">Período</label>
+                                <select id="filtro-periodo" class="form-select">
+                                    <option value="30">Últimos 30 dias</option>
+                                    <option value="90">Últimos 90 dias</option>
+                                    <option value="180">Últimos 6 meses</option>
+                                    <option value="365">Último ano</option>
+                                    <option value="all">Todo período</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12 text-end">
+                            <button id="btn-aplicar-filtros" class="btn btn-primary">
+                                <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                            </button>
+                            <button id="btn-limpar-filtros" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-broom me-2"></i>Limpar Filtros
+                            </button>
+                            <button id="btn-atualizar-dados" class="btn btn-success ms-2">
+                                <i class="fas fa-sync-alt me-2"></i>Forçar Atualização
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Painel de Estatísticas -->
+    <div class="dashboard-container">
+        <!-- Cabeçalho da página -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">Visão Gerencial Operacional</h1>
+                <p class="text-muted mb-0">Acompanhamento de métricas e indicadores de desempenho</p>
+            </div>
+            <div>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <button class="btn btn-primary ms-2" id="refresh-dashboard">
+                    <i class="fas fa-sync-alt me-2"></i>Atualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Área para o conteúdo do dashboard que será carregado via JavaScript -->
+        <div id="dashboard-content">
+            <!-- Indicador de carregamento inicial -->
+            <div class="dashboard-loader">
+                <div class="loader-spinner"></div>
+                <p class="text-muted">Carregando dados do dashboard...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mensagens de erro -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Erro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="error-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" id="btn-retry" class="btn btn-primary">Tentar Novamente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para exibir detalhes do contrato -->
+<div class="modal fade" id="modal-detalhes" tabindex="-1" aria-labelledby="detalheContratoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <!-- Conteúdo será preenchido dinamicamente pela função -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Carregamento de scripts na ordem correta -->
+<script>
+    // Variáveis globais para armazenar os gráficos
+    let chartStatusPedidos = null;
+    let chartValorPorMes = null;
+    let chartTopSupervisores = null;
+    let chartBudgetsEstourados = null;
+    let chartProdutosMaisPedidos = null;
+    let chartProdutosMenosSolicitados = null;
+    let chartUtilizacaoBudget = null;
+    let chartIndicadoresFinanceiros = null;
+    
+    // Dados do dashboard
+    let dadosDashboard = null;
+    
+    // Variável para controlar o DataTable
+    let pedidosDataTable = null;
+    
+    $(document).ready(function() {
+        console.log("Inicializando dashboard...");
+        
+        // Ativar tooltips do Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Carregar os dados e renderizar o dashboard
+        carregarDados();
+        
+        // Configurar evento de atualização
+        $("#refresh-dashboard").click(function() {
+            carregarDados();
+        });
+        
+        // Configurar eventos de filtro
+        $("#btn-aplicar-filtros").click(function() {
+            aplicarFiltros();
+        });
+        
+        $("#btn-limpar-filtros").click(function() {
+            limparFiltros();
+        });
+        
+        // Botão para forçar atualização dos dados
+        $("#btn-atualizar-dados").click(function() {
+            carregarDados(true);
+        });
+        
+        // Evento para carregar contratos quando a empresa for selecionada
+        $("#filtro-empresa").change(function() {
+            carregarContratos($(this).val());
+        });
+
+        // Quando o valor do filtro de contrato mudar
+        $("#filtro-contrato").change(function() {
+            var contratoId = $(this).val();
+            carregarDadosContrato(contratoId);
+        });
+    });
+    
+    // Função para carregar contratos relacionados à empresa selecionada
+    function carregarContratos(empresa) {
+        console.log("Carregando contratos para a empresa:", empresa);
+        
+        // Limpar o dropdown de contratos e adicionar um indicador de carregamento
+        $("#filtro-contrato").html('<option value="">Carregando contratos...</option>').prop('disabled', true);
+        
+        // Se nenhuma empresa for selecionada, mostrar o total geral
+        if (!empresa) {
+            // Restaurar o dropdown original
+            $("#filtro-contrato").html('<option value="">Todos os contratos</option>').prop('disabled', false);
+            // Restaurar o valor total de contratos original
+            $("#total-contratos-card").text("{{ total_escolas }}");
+            // Carregar dados do dashboard para mostrar todos os contratos
+            carregarDados();
+            return;
+        }
+        
+        // Requisição AJAX para obter os contratos da empresa
+        $.ajax({
+            url: '/visao-gerencial/contratos/',
+            method: 'GET',
+            dataType: 'json',
+            data: {
+                empresa: empresa
+            },
+            success: function(data) {
+                console.log("Contratos recebidos:", data);
+                
+                // Limpar dropdown e habilitar novamente
+                $("#filtro-contrato").empty().prop('disabled', false);
+                $("#filtro-contrato").append('<option value="">Todos os contratos</option>');
+                
+                if (data.error) {
+                    console.error("Erro ao carregar contratos:", data.message);
+                    return;
+                }
+                
+                // Adicionar contratos ao dropdown
+                if (Array.isArray(data.contratos) && data.contratos.length > 0) {
+                    // Atualizar o contador de contratos com o número de contratos da empresa
+                    $("#total-contratos-card").text(data.contratos.length);
+                    
+                    data.contratos.forEach(function(contrato) {
+                        $("#filtro-contrato").append(`<option value="${contrato.id}">${contrato.nome}</option>`);
+                    });
+                } else {
+                    // Se não houver contratos, mostrar zero
+                    $("#total-contratos-card").text("0");
+                    console.log("Nenhum contrato encontrado para a empresa", empresa);
+                }
+                
+                // Carregar dados do dashboard após atualizar os contratos
+                carregarDados();
+            },
+            error: function(xhr, status, error) {
+                console.error("Erro ao carregar contratos:", error);
+                // Em caso de erro, habilitar dropdown e mostrar mensagem
+                $("#filtro-contrato").html('<option value="">Erro ao carregar contratos</option>').prop('disabled', false);
+                // Manter o valor original
+                $("#total-contratos-card").text("{{ total_escolas }}");
+                // Carregar dados do dashboard mesmo em caso de erro
+                carregarDados();
+            }
+        });
+    }
+    
+    // Função para carregar dados de um contrato específico
+    function carregarDadosContrato(contratoId) {
+        console.log("Contrato selecionado: " + contratoId);
+        
+        // Se não houver contrato selecionado, carregar todos os dados
+        if (!contratoId) {
+            carregarDadosDashboard();
+            return;
+        }
+        
+        // Exibir loader
+        $("#loader").show();
+        
+        // Fazer requisição AJAX para obter dados do contrato
+        $.ajax({
+            url: '/visao-gerencial/dados/',
+            type: 'GET',
+            data: {
+                contrato_id: contratoId,
+                periodo: $("#filtro-periodo").val()
+            },
+            success: function(data) {
+                console.log("Dados recebidos:", data);
+                
+                // Verificar se há erros na resposta
+                if (data.erro) {
+                    console.error("Erro ao carregar dados:", data.mensagem);
+                    tratarErroRequisicao(data.mensagem || "Erro ao carregar dados do contrato.");
+                    return;
+                }
+                
+                // Atualizar os dados no dashboard
+                atualizarDadosDashboard(data);
+                
+                // Esconder loader
+                $("#loader").hide();
+            },
+            error: function(xhr, status, error) {
+                console.error("Erro na requisição:", error);
+                tratarErroRequisicao("Erro ao carregar dados. Por favor, tente novamente.");
+                $("#loader").hide();
+            }
+        });
+    }
+    
+    // Função para carregar todos os dados do dashboard
+    function carregarDadosDashboard() {
+        console.log("Carregando dados gerais do dashboard");
+        
+        // Exibir loader
+        $("#loader").show();
+        
+        // Fazer requisição AJAX para obter todos os dados
+        $.ajax({
+            url: '/visao-gerencial/dados/',
+            type: 'GET',
+            success: function(data) {
+                console.log("Dados recebidos:", data);
+                
+                // Verificar se há erros na resposta
+                if (data.erro) {
+                    console.error("Erro ao carregar dados:", data.mensagem);
+                    tratarErroRequisicao(data.mensagem || "Erro ao carregar dados do dashboard.");
+                    return;
+                }
+                
+                // Atualizar os dados no dashboard
+                atualizarDadosDashboard(data);
+                
+                // Esconder loader
+                $("#loader").hide();
+            },
+            error: function(xhr, status, error) {
+                console.error("Erro na requisição:", error);
+                tratarErroRequisicao("Erro ao carregar dados. Por favor, tente novamente.");
+                $("#loader").hide();
+            }
+        });
+    }
+    
+    // Função para carregar os dados do dashboard
+    function carregarDados(forceRefresh = false) {
+        console.log("Carregando dados do dashboard, forceRefresh:", forceRefresh);
+        
+        // Salvar valor atual do contador de contratos
+        const valorAtualContratos = $("#total-contratos-card").text();
+        
+        // Obter o valor da empresa selecionada
+        const empresaSelecionada = $("#filtro-empresa").val();
+        console.log("Empresa selecionada:", empresaSelecionada);
+        
+        // Obter o valor do contrato selecionado
+        const contratoSelecionado = $("#filtro-contrato").val();
+        console.log("Contrato selecionado:", contratoSelecionado);
+        
+        // Obter o valor do período selecionado
+        const periodoSelecionado = $("#filtro-periodo").val();
+        console.log("Período selecionado:", periodoSelecionado);
+        
+        // Mostrar loader
+        $("#dashboard-content").html(`
+            <div class="dashboard-loader">
+                <div class="loader-spinner"></div>
+                <p class="text-muted">Carregando dados do dashboard...</p>
+            </div>
+        `);
+        
+        // Requisição AJAX para obter os dados
+        $.ajax({
+            url: '/visao-gerencial/dados/',
+            method: 'GET',
+            dataType: 'json',
+            cache: false, // Evitar cache
+            data: {
+                empresa: empresaSelecionada,
+                contrato: contratoSelecionado,
+                periodo: periodoSelecionado,
+                status: $("#filtro-status").val() || '',
+                valor_minimo: $("#filtro-valor-minimo").val() || '',
+                refresh: forceRefresh ? 'true' : 'false'
+            },
+            success: function(data) {
+                console.log("Dados recebidos:", data); // Log para debug
+                if (data.error) {
+                    tratarErroRequisicao(data.message || "Erro ao carregar dados do servidor", carregarDados);
+                    return;
+                }
+                
+                dadosDashboard = data;
+                renderizarDashboard(data);
+                
+                // Verificar se há empresa selecionada e restaurar o contador
+                if (empresaSelecionada) {
+                    // Restaurar o contador com o número de contratos no dropdown
+                    const numContratos = $("#filtro-contrato option").length - 1; // -1 para a opção "Todos os contratos"
+                    $("#total-contratos-card").text(numContratos);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Erro ao carregar dados:", error, xhr.responseText); // Log para debug
+                
+                // Se não conseguir carregar os dados, mostrar um erro
+                // mas também carregar alguns dados de exemplo para que o usuário veja algo na tela
+                const dadosExemplo = {
+                    total_pedidos: 123,
+                    valor_total: 45678.90,
+                    pedidos_finalizados: 87,
+                    pedidos_pendentes: 36,
+                    pedidos_aprovados: 45,
+                    pedidos_enviados: 12,
+                    pedidos_entregues: 87,
+                    pedidos_cancelados: 12,
+                    status_pedidos: {
+                        pendente: 36,
+                        aprovado: 45,
+                        enviado: 12,
+                        entregue: 87,
+                        finalizado: 87,
+                        rejeitado: 12,
+                        cancelado: 12
+                    },
+                    valor_por_mes: [
+                        {month: 'Jan', value: 10000},
+                        {month: 'Fev', value: 12000},
+                        {month: 'Mar', value: 15000},
+                        {month: 'Abr', value: 13000},
+                        {month: 'Mai', value: 18000},
+                        {month: 'Jun', value: 16000}
+                    ],
+                    top_supervisores: [
+                        {nome: 'Supervisor A', total_pedidos: 45},
+                        {nome: 'Supervisor B', total_pedidos: 32},
+                        {nome: 'Supervisor C', total_pedidos: 25}
+                    ],
+                    budgets_estourados: [
+                        {contrato: 'Contrato A', percentual_estouro: 15},
+                        {contrato: 'Contrato B', percentual_estouro: 10}
+                    ],
+                    produtos_mais_pedidos: [
+                        {produto: 'Produto X', quantidade: 87},
+                        {produto: 'Produto Y', quantidade: 65},
+                        {produto: 'Produto Z', quantidade: 42}
+                    ],
+                    produtos_menos_solicitados: [
+                        {produto: 'Produto M', quantidade: 3},
+                        {produto: 'Produto N', quantidade: 5},
+                        {produto: 'Produto O', quantidade: 7}
+                    ],
+                    utilizacao_budget: [
+                        {contrato: 'Contrato A', percentual_utilizado: 85},
+                        {contrato: 'Contrato B', percentual_utilizado: 65},
+                        {contrato: 'Contrato C', percentual_utilizado: 92}
+                    ],
+                    indicadores_financeiros: {
+                        valor_medio_pedido: 1250,
+                        valor_total_mes_atual: 42000,
+                        economia_estimada: 7500,
+                        valor_pendente_aprovacao: 12000
+                    },
+                    pedidos: [
+                        {id: 1, data: '2023-07-15', supervisor: 'Supervisor A', contrato: 'Contrato X', empresa: 'Empresa ABC', valor: 1500, status: 'Aprovado'},
+                        {id: 2, data: '2023-07-18', supervisor: 'Supervisor B', contrato: 'Contrato Y', empresa: 'Empresa XYZ', valor: 2300, status: 'Pendente'},
+                        {id: 3, data: '2023-07-21', supervisor: 'Supervisor C', contrato: 'Contrato Z', empresa: 'Empresa ABC', valor: 1800, status: 'Finalizado'},
+                        {id: 4, data: '2023-07-22', supervisor: 'Supervisor A', contrato: 'Contrato W', empresa: 'Empresa DEF', valor: 3200, status: 'Enviado'},
+                        {id: 5, data: '2023-07-23', supervisor: 'Supervisor D', contrato: 'Contrato V', empresa: 'Empresa XYZ', valor: 1950, status: 'Cancelado'},
+                        {id: 6, data: '2023-07-24', supervisor: 'Supervisor B', contrato: 'Contrato U', empresa: 'Empresa DEF', valor: 2800, status: 'Entregue'},
+                        {id: 7, data: '2023-07-25', supervisor: 'Supervisor E', contrato: 'Contrato T', empresa: 'Empresa GHI', valor: 1650, status: 'pedido_enviado'},
+                        {id: 8, data: '2023-07-26', supervisor: 'Supervisor C', contrato: 'Contrato S', empresa: 'Empresa JKL', valor: 3750, status: 'Pendente'}
+                    ]
+                };
+                
+                // Mostrar aviso de que estamos usando dados de exemplo
+                $("#dashboard-content").html(`
+                    <div class="alert alert-warning mb-4">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i>Erro ao carregar dados do servidor</h4>
+                        <p>Não foi possível obter os dados atualizados do servidor. Estamos mostrando dados de exemplo.</p>
+                        <p>Erro: ${error}</p>
+                        <button class="btn btn-warning" onclick="carregarDados(true)">Tentar Novamente</button>
+                    </div>
+                `);
+                
+                // Renderizar o dashboard com dados de exemplo
+                renderizarDashboard(dadosExemplo);
+            }
+        });
+    }
+    
+    // Renderizar o dashboard completo
+    function renderizarDashboard(data) {
+        // Construir o HTML do dashboard
+        let dashboardHtml = `
+            <div class="row mb-4">
+                <!-- Cards de estatísticas - todos em uma única linha -->
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card-body">
+                            <div class="stat-icon bg-gradient-orange">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h5 class="stat-title">Pendentes</h5>
+                                <h2 class="stat-value">${data.status_pedidos.pendente || 0}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card-body">
+                            <div class="stat-icon bg-gradient-green">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h5 class="stat-title">Aprovados</h5>
+                                <h2 class="stat-value">${data.status_pedidos.aprovado || 0}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card-body">
+                            <div class="stat-icon bg-gradient-blue">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h5 class="stat-title">Enviados</h5>
+                                <h2 class="stat-value">${data.status_pedidos.enviados || data.status_pedidos.enviado || 0}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card-body">
+                            <div class="stat-icon bg-gradient-teal">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h5 class="stat-title">Entregues</h5>
+                                <h2 class="stat-value">${data.status_pedidos.entregues || data.status_pedidos.finalizado || 0}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card-body">
+                            <div class="stat-icon bg-gradient-pink">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h5 class="stat-title">Cancelados</h5>
+                                <h2 class="stat-value">${data.status_pedidos.cancelados || data.status_pedidos.rejeitado || 0}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="stats-card">
+                        <div class="card-body">
+                            <div class="stat-icon bg-gradient-purple">
+                                <i class="fas fa-file-contract"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h5 class="stat-title">Contratos</h5>
+                                <h2 class="stat-value" id="total-contratos-card">{{ total_escolas }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <!-- Gráficos principais -->
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Valor Total de Pedidos por Mês</h5>
+                        <div id="chart-valor-por-mes" style="height: 300px;"></div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Status dos Pedidos</h5>
+                        <div id="chart-status-pedidos" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Top Supervisores</h5>
+                        <div id="chart-top-supervisores" style="height: 300px;"></div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Variação do Budget</h5>
+                        <div id="chart-budgets-estourados" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Produtos Mais Pedidos</h5>
+                        <div id="chart-produtos-mais-pedidos" style="height: 300px;"></div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Produtos Menos Solicitados</h5>
+                        <div id="chart-produtos-menos-solicitados" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Top 5 Contratos com Maior Gasto</h5>
+                        <div id="chart-utilizacao-budget" style="height: 300px;"></div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5 class="chart-title">Indicadores Financeiros</h5>
+                        <div id="chart-indicadores-financeiros" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+        `;
+        
+        // Atualizar o conteúdo do dashboard
+        $("#dashboard-content").html(dashboardHtml);
+        
+        // Verificar se há empresa selecionada
+        const empresaSelecionada = $("#filtro-empresa").val();
+        
+        // Se não há empresa selecionada, definir total-contratos-card com o valor padrão
+        if (!empresaSelecionada) {
+            $("#total-contratos-card").text("{{ total_escolas }}");
+        }
+        
+        // Renderizar os gráficos
+        renderizarGraficos(data);
+        
+        // Carregar os pedidos recentes
+        carregarPedidosRecentes();
+    }
+    
+    // Função para carregar pedidos recentes
+    function carregarPedidosRecentes() {
+        console.log("Carregando pedidos recentes...");
+        
+        // Adicionar a estrutura da tabela no HTML
+        $("#dashboard-content").append(`
+            <!-- Tabela de pedidos -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-container">
+                        <h5 class="chart-title">Pedidos Recentes</h5>
+                        <div class="table-responsive">
+                            <!-- A tabela será preenchida aqui -->
+                            <div id="table-placeholder" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Carregando...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Carregando dados da tabela...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        // Obter o valor da empresa selecionada
+        const empresaSelecionada = $("#filtro-empresa").val();
+        // Obter o valor do contrato selecionado
+        const contratoSelecionado = $("#filtro-contrato").val();
+        // Obter o valor do período selecionado
+        const periodoSelecionado = $("#filtro-periodo").val();
+        
+        // Fazer requisição AJAX para buscar pedidos recentes
+        $.ajax({
+            url: '/pedidos/buscar-recentes/',
+            method: 'GET',
+            dataType: 'json',
+            data: {
+                empresa: empresaSelecionada,
+                contrato: contratoSelecionado,
+                periodo: periodoSelecionado,
+                limit: 10 // Limitar a 10 pedidos recentes
+            },
+            success: function(data) {
+                console.log("Pedidos recentes recebidos:", data);
+                if (data.error) {
+                    console.error("Erro ao carregar pedidos recentes:", data.message);
+                    // Usar dados exemplo em caso de erro
+                    renderizarTabelaPedidos(dadosDashboard.pedidos || []);
+                    return;
+                }
+                
+                // Renderizar tabela com pedidos recentes recebidos
+                renderizarTabelaPedidos(data.pedidos || []);
+            },
+            error: function(xhr, status, error) {
+                console.error("Erro ao carregar pedidos recentes:", error);
+                // Usar dados exemplo em caso de erro
+                renderizarTabelaPedidos(dadosDashboard.pedidos || []);
+            }
+        });
+    }
+    
+    // Função para renderizar todos os gráficos
+    function renderizarGraficos(data) {
+        console.log("Renderizando gráficos com dados:", data); // Log para debug
+        
+        try {
+            // Verificar se os elementos existem antes de renderizar os gráficos
+            if (document.getElementById('chart-valor-por-mes')) {
+                renderizarGraficoValorPorMes(data.valor_por_mes || []);
+            } else {
+                console.error("Elemento #chart-valor-por-mes não encontrado");
+            }
+            
+            if (document.getElementById('chart-status-pedidos')) {
+                renderizarGraficoStatusPedidos(data.status_pedidos || {});
+            } else {
+                console.error("Elemento #chart-status-pedidos não encontrado");
+            }
+            
+            if (document.getElementById('chart-top-supervisores')) {
+                renderizarGraficoTopSupervisores(data.top_supervisores || []);
+            } else {
+                console.error("Elemento #chart-top-supervisores não encontrado");
+            }
+            
+            if (document.getElementById('chart-budgets-estourados')) {
+                renderizarGraficoBudgetsEstourados(data.budgets_estourados || []);
+            } else {
+                console.error("Elemento #chart-budgets-estourados não encontrado");
+            }
+            
+            if (document.getElementById('chart-produtos-mais-pedidos')) {
+                renderizarGraficoProdutosMaisPedidos(data.produtos_mais_pedidos || []);
+            } else {
+                console.error("Elemento #chart-produtos-mais-pedidos não encontrado");
+            }
+            
+            if (document.getElementById('chart-produtos-menos-solicitados')) {
+                renderizarGraficoProdutosMenosSolicitados(data.produtos_menos_solicitados || []);
+            } else {
+                console.error("Elemento #chart-produtos-menos-solicitados não encontrado");
+            }
+            
+            if (document.getElementById('chart-utilizacao-budget')) {
+                renderizarGraficoUtilizacaoBudget(data.utilizacao_budget || []);
+            } else {
+                console.error("Elemento #chart-utilizacao-budget não encontrado");
+            }
+            
+            if (document.getElementById('chart-indicadores-financeiros')) {
+                renderizarGraficoIndicadoresFinanceiros(data.indicadores_financeiros || {});
+            } else {
+                console.error("Elemento #chart-indicadores-financeiros não encontrado");
+            }
+        } catch (erro) {
+            console.error("Erro ao renderizar gráficos:", erro);
+            // Mostrar mensagem de erro no dashboard
+            $("#dashboard-content").append(`
+                <div class="alert alert-danger mt-3">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Erro ao carregar os gráficos</h5>
+                    <p>Ocorreu um erro ao renderizar os gráficos. Detalhes: ${erro.message}</p>
+                    <button class="btn btn-outline-danger" onclick="carregarDados(true)">Tentar Novamente</button>
+                </div>
+            `);
+        }
+    }
+    
+    // Gráfico: Valor Total de Pedidos por Mês
+    function renderizarGraficoValorPorMes(dados) {
+        console.log("Dados para gráfico valor por mês:", dados); // Log para debug
+        
+        try {
+            // Verificar se o ApexCharts está disponível
+            if (typeof ApexCharts === 'undefined') {
+                throw new Error("ApexCharts não está disponível. Verifique se a biblioteca foi carregada.");
+            }
+            
+            // Verificar se o elemento existe
+            const element = document.querySelector("#chart-valor-por-mes");
+            if (!element) {
+                throw new Error("Elemento #chart-valor-por-mes não encontrado no DOM");
+            }
+            
+            const options = {
+                series: [{
+                    name: 'Valor Total',
+                    data: dados.map(item => item.value)
+                }],
+                chart: {
+                    height: 300,
+                    type: 'bar',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        borderRadius: 5
+                    },
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                xaxis: {
+                    categories: dados.map(item => item.month),
+                },
+                yaxis: {
+                    title: {
+                        text: 'Valor (R$)'
+                    },
+                    labels: {
+                        formatter: function(val) {
+                            return 'R$ ' + formatarValor(val);
+                        }
+                    }
+                },
+                fill: {
+                    opacity: 1,
+                    colors: ['#4361ee']
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return 'R$ ' + formatarValor(val);
+                        }
+                    }
+                }
+            };
+
+            if (chartValorPorMes) {
+                // Se o gráfico já existe, destruí-lo e criar novamente
+                chartValorPorMes.destroy();
+            }
+
+            chartValorPorMes = new ApexCharts(element, options);
+            chartValorPorMes.render();
+        } catch (erro) {
+            console.error("Erro ao renderizar gráfico de valor por mês:", erro);
+            $("#chart-valor-por-mes").html(`
+                <div class="alert alert-warning p-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Não foi possível carregar o gráfico: ${erro.message}
+                </div>
+            `);
+        }
+    }
+    
+    // Gráfico: Status dos Pedidos
+    function renderizarGraficoStatusPedidos(dados) {
+        console.log("Dados para gráfico de status:", dados); // Log para debug
+        
+        try {
+            // Verificar se o ApexCharts está disponível
+            if (typeof ApexCharts === 'undefined') {
+                throw new Error("ApexCharts não está disponível. Verifique se a biblioteca foi carregada.");
+            }
+            
+            // Verificar se o elemento existe
+            const element = document.querySelector("#chart-status-pedidos");
+            if (!element) {
+                throw new Error("Elemento #chart-status-pedidos não encontrado no DOM");
+            }
+            
+            const options = {
+                series: [
+                    dados.pendente || 0,
+                    dados.aprovado || 0,
+                    dados.finalizado || 0,
+                    dados.rejeitado || 0
+                ],
+                chart: {
+                    height: 300,
+                    type: 'donut',
+                },
+                labels: ['Pendente', 'Aprovado', 'Finalizado', 'Rejeitado'],
+                colors: ['#ffd166', '#06d6a0', '#118ab2', '#ef476f'],
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            width: 200
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }],
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val, opts) {
+                        return opts.w.globals.series[opts.seriesIndex];
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return val + ' pedidos';
+                        }
+                    }
+                }
+            };
+
+            if (chartStatusPedidos) {
+                // Se o gráfico já existe, destruí-lo e criar novamente
+                chartStatusPedidos.destroy();
+            }
+            
+            chartStatusPedidos = new ApexCharts(element, options);
+            chartStatusPedidos.render();
+        } catch (erro) {
+            console.error("Erro ao renderizar gráfico de status de pedidos:", erro);
+            $("#chart-status-pedidos").html(`
+                <div class="alert alert-warning p-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Não foi possível carregar o gráfico: ${erro.message}
+                </div>
+            `);
+        }
+    }
+    
+    // Gráfico: Top Supervisores
+    function renderizarGraficoTopSupervisores(dados) {
+        console.log("Dados para gráfico top supervisores:", dados); // Log para debug
+        
+        const options = {
+            series: [{
+                name: 'Contratos',
+                data: dados.map(item => item.total_escolas)
+            }],
+            chart: {
+                height: 300,
+                type: 'bar',
+                toolbar: {
+                    show: false
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    dataLabels: {
+                        position: 'top',
+                    },
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                offsetX: -6,
+                style: {
+                    fontSize: '12px',
+                    colors: ['#fff']
+                }
+            },
+            xaxis: {
+                categories: dados.map(item => item.nome),
+            },
+            yaxis: {
+                title: {
+                    text: 'Número de Contratos'
+                }
+            },
+            fill: {
+                opacity: 1,
+                colors: ['#7209b7']
+            }
+        };
+
+        if (chartTopSupervisores) {
+            // Se o gráfico já existe, destruí-lo e criar novamente
+            chartTopSupervisores.destroy();
+        }
+
+        chartTopSupervisores = new ApexCharts(document.querySelector("#chart-top-supervisores"), options);
+        chartTopSupervisores.render();
+    }
+    
+    // Gráfico: Budgets Estourados
+    function renderizarGraficoBudgetsEstourados(dados) {
+        console.log("Dados para gráfico budgets estourados:", dados); // Log para debug
+        
+        // Verificar se temos dados de budgets_alterados
+        if (dadosDashboard && dadosDashboard.budgets_alterados && dadosDashboard.budgets_alterados.length > 0) {
+            dados = dadosDashboard.budgets_alterados;
+            console.log("Usando dados de variação de budget:", dados);
+        }
+        
+        // Preparar os dados para o gráfico
+        const seriesData = dados.map(item => item.percentual_variacao || item.percentual_estouro);
+        const categorias = dados.map(item => item.contrato);
+        
+        // Determinar cores com base no valor (valores positivos em verde, negativos em vermelho)
+        const cores = seriesData.map(valor => valor < 0 ? '#ef476f' : '#06d6a0');
+        
+        const options = {
+            series: [{
+                name: 'Variação Orçamento',
+                data: seriesData
+            }],
+            chart: {
+                height: 300,
+                type: 'bar',
+                toolbar: {
+                    show: false
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    borderRadius: 5,
+                    distributed: true
+                },
+            },
+            colors: cores,
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                }
+            },
+            xaxis: {
+                categories: categorias,
+            },
+            yaxis: {
+                title: {
+                    text: 'Variação no Orçamento (%)'
+                },
+                labels: {
+                    formatter: function(val) {
+                        return val.toFixed(1) + '%';
+                    }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function(val) {
+                        return val.toFixed(1) + '%';
+                    }
+                }
+            },
+            title: {
+                text: 'Variação no Budget dos Contratos',
+                align: 'center',
+                style: {
+                    fontSize: '14px'
+                }
+            },
+            subtitle: {
+                text: 'Aumento (Verde) ou Redução (Vermelho) do Orçamento',
+                align: 'center',
+                style: {
+                    fontSize: '12px'
+                }
+            }
+        };
+
+        if (chartBudgetsEstourados) {
+            // Se o gráfico já existe, destruí-lo e criar novamente
+            chartBudgetsEstourados.destroy();
+        }
+
+        chartBudgetsEstourados = new ApexCharts(document.querySelector("#chart-budgets-estourados"), options);
+        chartBudgetsEstourados.render();
+    }
+    
+    // Gráfico: Produtos Mais Pedidos
+    function renderizarGraficoProdutosMaisPedidos(dados) {
+        console.log("Dados para gráfico produtos mais pedidos:", dados); // Log para debug
+        
+        const options = {
+            series: [{
+                name: 'Quantidade',
+                data: dados.map(item => item.quantidade)
+            }],
+            chart: {
+                height: 300,
+                type: 'bar',
+                toolbar: {
+                    show: false
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    dataLabels: {
+                        position: 'top',
+                    },
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                offsetX: -6,
+                style: {
+                    fontSize: '12px',
+                    colors: ['#fff']
+                }
+            },
+            xaxis: {
+                categories: dados.map(item => item.produto),
+            },
+            yaxis: {
+                title: {
+                    text: 'Quantidade'
+                }
+            },
+            fill: {
+                opacity: 1,
+                colors: ['#06d6a0']
+            }
+        };
+
+        if (chartProdutosMaisPedidos) {
+            // Se o gráfico já existe, destruí-lo e criar novamente
+            chartProdutosMaisPedidos.destroy();
+        }
+
+        chartProdutosMaisPedidos = new ApexCharts(document.querySelector("#chart-produtos-mais-pedidos"), options);
+        chartProdutosMaisPedidos.render();
+    }
+    
+    // Gráfico: Produtos Menos Solicitados
+    function renderizarGraficoProdutosMenosSolicitados(dados) {
+        console.log("Dados para gráfico produtos menos solicitados:", dados); // Log para debug
+        
+        const options = {
+            series: [{
+                name: 'Quantidade',
+                data: dados.map(item => item.quantidade)
+            }],
+            chart: {
+                height: 300,
+                type: 'bar',
+                toolbar: {
+                    show: false
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    dataLabels: {
+                        position: 'top',
+                    },
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                offsetX: -6,
+                style: {
+                    fontSize: '12px',
+                    colors: ['#fff']
+                }
+            },
+            xaxis: {
+                categories: dados.map(item => item.produto),
+            },
+            yaxis: {
+                title: {
+                    text: 'Quantidade'
+                }
+            },
+            fill: {
+                opacity: 1,
+                colors: ['#4895ef']
+            }
+        };
+
+        if (chartProdutosMenosSolicitados) {
+            // Se o gráfico já existe, destruí-lo e criar novamente
+            chartProdutosMenosSolicitados.destroy();
+        }
+
+        chartProdutosMenosSolicitados = new ApexCharts(document.querySelector("#chart-produtos-menos-solicitados"), options);
+        chartProdutosMenosSolicitados.render();
+    }
+    
+    // Gráfico: Utilização de Budget por Contrato (Top 5 com maior gasto)
+    function renderizarGraficoUtilizacaoBudget(dados) {
+        console.log("Dados para gráfico Top 5 contratos com maior gasto:", dados); // Log para debug
+        
+        // Verificação de dados vazios ou inválidos
+        if (!dados || !Array.isArray(dados) || dados.length === 0) {
+            console.error("Dados de utilização de budget vazio ou inválidos", dados);
+            document.querySelector("#chart-utilizacao-budget").innerHTML = `
+                <div class="alert alert-warning p-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Não há dados de gasto por contrato disponíveis.
+                </div>
+            `;
+            return;
+        }
+        
+        // Verificação mais detalhada dos dados
+        console.table(dados); // Exibe em formato de tabela para depuração
+        
+        // Verificar se todos os itens têm a propriedade valor_utilizado
+        const dadosValidos = dados.filter(item => 
+            item && typeof item === 'object' && 
+            'valor_utilizado' in item && 
+            !isNaN(item.valor_utilizado)
+        );
+        
+        if (dadosValidos.length === 0) {
+            console.error("Nenhum dado válido encontrado para gastos por contrato", dados);
+            document.querySelector("#chart-utilizacao-budget").innerHTML = `
+                <div class="alert alert-warning p-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Dados de gastos por contrato estão em formato inválido.
+                </div>
+            `;
+            return;
+        }
+        
+        // Ordenar dados do maior para o menor valor utilizado
+        dadosValidos.sort((a, b) => b.valor_utilizado - a.valor_utilizado);
+        
+        // Preparar dados para o gráfico
+        const series = [{
+            name: 'Valor Gasto (R$)',
+            data: dadosValidos.map(item => item.valor_utilizado)
+        }];
+        
+        const categories = dadosValidos.map(item => item.contrato);
+        
+        // Definir cores
+        const colors = ['#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0'];
+        
+        const options = {
+            series: series,
+            chart: {
+                height: 300,
+                type: 'bar',
+                toolbar: {
+                    show: false
+                },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 350
+                    }
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    dataLabels: {
+                        position: 'top',
+                    },
+                    barHeight: '70%',
+                    distributed: true,
+                    borderRadius: 4
+                },
+            },
+            colors: colors,
+            dataLabels: {
+                enabled: true,
+                formatter: function(val, opt) {
+                    return `R$ ${formatarValor(val)}`;
+                },
+                style: {
+                    fontSize: '15px',
+                    colors: ['#000'],
+                    fontWeight: 'bold',
+                    textShadow: '1px 1px 4px rgba(0,0,0,0.9)',
+                    backgroundColor: '#fff'                    
+                },
+                offsetX: 0,
+                dropShadow: {
+                    enabled: true,
+                    top: 1,
+                    left: 1,
+                    blur: 3,
+                    opacity: 0.9
+                },
+                background: {
+                    enabled: true,
+                    backgroundColor: '#000',
+                    padding: 4,
+                    borderRadius: 2,
+                }
+            },
+            legend: {
+                show: false
+            },
+            xaxis: {
+                categories: categories,
+                labels: {
+                    formatter: function(val) {
+                        return `R$ ${formatarValor(val)}`;
+                    }
+                },
+                title: {
+                    text: 'Valor Gasto (R$)',
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                    }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function(val, opt) {
+                        const item = dadosValidos[opt.dataPointIndex];
+                        return `Gasto: R$ ${formatarValor(val)}<br>Budget: R$ ${formatarValor(item.budget_total)}<br>Utilização: ${item.percentual_utilizado.toFixed(1)}%`;
+                    }
+                },
+                x: {
+                    show: true
+                },
+                followCursor: true,
+                shared: false
+            },
+            title: {
+                text: 'Top 5 Contratos com Maior Gasto',
+                align: 'center',
+                style: {
+                    fontSize: '14px'
+                }
+            },
+            subtitle: {
+                text: 'Valores absolutos gastos em pedidos',
+                align: 'center',
+                style: {
+                    fontSize: '12px'
+                }
+            }
+        };
+
+        if (chartUtilizacaoBudget) {
+            // Se o gráfico já existe, destruí-lo e criar novamente
+            chartUtilizacaoBudget.destroy();
+        }
+
+        chartUtilizacaoBudget = new ApexCharts(document.querySelector("#chart-utilizacao-budget"), options);
+        chartUtilizacaoBudget.render();
+    }
+    
+    // Gráfico: Indicadores Financeiros
+    function renderizarGraficoIndicadoresFinanceiros(dados) {
+        console.log("Dados para gráfico indicadores financeiros:", dados); // Log para debug
+        
+        // Preparar os dados para o gráfico
+        // Formatar os valores para exibição
+        const valorTotalFormatado = 'R$ ' + formatarValor(dados.valor_total_pedidos || 0);
+        const valorMedioFormatado = 'R$ ' + formatarValor(dados.valor_medio_pedido || 0);
+        const taxaAprovacaoFormatada = (dados.taxa_aprovacao || 0).toFixed(1) + '%';
+        const taxaCancelamentoFormatada = (dados.taxa_cancelamento || 0).toFixed(1) + '%';
+        
+        const options = {
+            series: [{
+                name: 'Valores',
+                data: [
+                    dados.valor_total_pedidos || 0,
+                    dados.valor_medio_pedido || 0, 
+                    dados.taxa_aprovacao || 0,
+                    dados.taxa_cancelamento || 0
+                ]
+            }],
+            chart: {
+                height: 300,
+                type: 'bar',
+                toolbar: {
+                    show: false
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 6,
+                    dataLabels: {
+                        position: 'top',
+                    },
+                    barHeight: '70%',
+                    distributed: true,
+                    colors: {
+                        backgroundBarColors: ['#f0f0f0']
+                    }
+                },
+            },
+            colors: ['#4361ee', '#06d6a0', '#ffd166', '#ef476f'],
+            dataLabels: {
+                enabled: true,
+                formatter: function (val, opt) {
+                    // Formatar os valores com base no índice
+                    const index = opt.dataPointIndex;
+                    if (index === 0) return valorTotalFormatado;
+                    if (index === 1) return valorMedioFormatado;
+                    if (index === 2) return taxaAprovacaoFormatada;
+                    if (index === 3) return taxaCancelamentoFormatada;
+                    return val;
+                },
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    colors: ['#444']
+                },
+                offsetX: 0,
+                dropShadow: {
+                    enabled: true,
+                    top: 1,
+                    left: 1,
+                    blur: 2,
+                    opacity: 0.2
+                }
+            },
+            xaxis: {
+                categories: [
+                    'Valor Total de Pedidos',
+                    'Valor Médio por Pedido',
+                    'Taxa de Aprovação',
+                    'Taxa de Cancelamento'
+                ],
+                labels: {
+                    formatter: function (val) {
+                        // Esconder os valores no eixo para evitar duplicação com os rótulos de dados
+                        return '';
+                    }
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontWeight: 'bold'
+                    }
+                }
+            },
+            grid: {
+                borderColor: '#f1f1f1',
+                strokeDashArray: 4
+            },
+            fill: {
+                opacity: 0.9
+            },
+            tooltip: {
+                y: {
+                    formatter: function(val, { seriesIndex, dataPointIndex, w }) {
+                        // Formatar com base no índice
+                        if (dataPointIndex === 0 || dataPointIndex === 1) {
+                            return 'R$ ' + formatarValor(val);
+                        } else {
+                            return val.toFixed(1) + '%';
+                        }
+                    }
+                }
+            },
+            title: {
+                text: 'Indicadores Financeiros',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold'
+                }
+            }
+        };
+
+        if (chartIndicadoresFinanceiros) {
+            // Se o gráfico já existe, destruí-lo e criar novamente
+            chartIndicadoresFinanceiros.destroy();
+        }
+
+        chartIndicadoresFinanceiros = new ApexCharts(document.querySelector("#chart-indicadores-financeiros"), options);
+        chartIndicadoresFinanceiros.render();
+    }
+    
+    // Renderizar tabela de pedidos
+    function renderizarTabelaPedidos(pedidos) {
+        try {
+            console.log("Renderizando tabela de pedidos:", pedidos);
+            
+            if (!Array.isArray(pedidos)) {
+                console.error("Dados de pedidos inválidos:", pedidos);
+                pedidos = [];
+            }
+            
+            // Criar a estrutura da tabela com os dados
+            const tabelaHTML = `
+                <table id="tabela-pedidos" class="table table-hover custom-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Contrato</th>
+                            <th>Empresa</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pedidos.length === 0 ? 
+                            `<tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="fas fa-emoji-neutral fs-1 text-muted mb-2"></i>
+                                    <p class="mb-0 text-muted">Nenhum pedido registrado ainda.</p>
+                                </td>
+                            </tr>` : 
+                            pedidos.map(pedido => {
+                                let statusClass = '';
+                                let statusText = '';
+                                
+                                switch(pedido.status) {
+                                    case 'Pendente': 
+                                    case 'pendente': 
+                                        statusClass = 'badge rounded-pill bg-warning text-dark'; 
+                                        statusText = 'Pendente';
+                                        break;
+                                    case 'Aprovado': 
+                                    case 'aprovado': 
+                                        statusClass = 'badge rounded-pill bg-success'; 
+                                        statusText = 'Aprovado';
+                                        break;
+                                    case 'Enviado': 
+                                    case 'enviado':
+                                    case 'pedido_enviado': 
+                                        statusClass = 'badge rounded-pill bg-primary'; 
+                                        statusText = 'Pedido Enviado';
+                                        break;
+                                    case 'Entregue': 
+                                    case 'entregue':
+                                    case 'Finalizado':
+                                    case 'finalizado': 
+                                        statusClass = 'badge rounded-pill bg-info'; 
+                                        statusText = 'Entregue';
+                                        break;
+                                    case 'Cancelado': 
+                                    case 'cancelado':
+                                    case 'Rejeitado':
+                                    case 'rejeitado': 
+                                        statusClass = 'badge rounded-pill bg-danger'; 
+                                        statusText = 'Cancelado';
+                                        break;
+                                    default: 
+                                        statusClass = 'badge rounded-pill bg-secondary';
+                                        statusText = pedido.status || 'Desconhecido';
+                                }
+                                
+                                return `
+                                    <tr class="align-middle">
+                                        <td>#${pedido.id || ''}</td>
+                                        <td>${pedido.contrato || ''}</td>
+                                        <td>${pedido.empresa || '-'}</td>
+                                        <td>${pedido.data || ''}</td>
+                                        <td><span class="${statusClass}">${statusText}</span></td>
+                                        <td>R$ ${formatarValor(pedido.valor || 0)}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary rounded-circle" onclick="verDetalhesPedido(${pedido.id})" data-bs-toggle="tooltip" title="Ver Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')
+                        }
+                    </tbody>
+                </table>
+            `;
+            
+            // Substituir a tabela atual
+            $(".table-responsive").html(tabelaHTML);
+            
+            // Carregar os scripts do DataTables dinamicamente
+            carregarScriptDataTables(function() {
+                // Inicializar o DataTables apenas depois que os scripts forem carregados
+                // e a tabela estiver pronta com os dados
+                inicializarDataTable();
+                
+                // Ativar tooltips
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            });
+            
+        } catch (error) {
+            console.error("Erro ao renderizar tabela de pedidos:", error);
+            $(".table-responsive").html(`
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Erro</h5>
+                    <p>Ocorreu um erro ao renderizar a tabela de pedidos: ${error.message}</p>
+                </div>
+            `);
+        }
+    }
+    
+    // Função para carregar os scripts do DataTables dinamicamente
+    function carregarScriptDataTables(callback) {
+        // Verificar se o DataTables já está carregado
+        if (typeof $.fn.DataTable !== 'undefined') {
+            // Se já estiver carregado, chamar o callback imediatamente
+            if (callback) callback();
+            return;
+        }
+        
+        console.log("Carregando scripts do DataTables...");
+        
+        // Carregar o CSS
+        $("head").append('<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">');
+        
+        // Carregar o JavaScript
+        $.getScript("https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js")
+            .done(function() {
+                $.getScript("https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js")
+                    .done(function() {
+                        console.log("Scripts do DataTables carregados com sucesso");
+                        if (callback) callback();
+                    })
+                    .fail(function(jqxhr, settings, exception) {
+                        console.error("Erro ao carregar script dataTables.bootstrap5.min.js:", exception);
+                    });
+            })
+            .fail(function(jqxhr, settings, exception) {
+                console.error("Erro ao carregar script jquery.dataTables.min.js:", exception);
+            });
+    }
+    
+    // Função para inicializar o DataTable
+    function inicializarDataTable() {
+        try {
+            console.log("Inicializando DataTable...");
+            
+            // Destruir DataTable existente, se houver
+            if ($.fn.DataTable.isDataTable('#tabela-pedidos')) {
+                $('#tabela-pedidos').DataTable().destroy();
+            }
+            
+            // Configurar para ignorar a verificação de contagem de colunas
+            $.fn.dataTable.ext.errMode = 'none'; // Desativar o modo de erro padrão
+            
+            // Inicializar o DataTable com as opções desejadas
+            pedidosDataTable = $('#tabela-pedidos').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json'
+                },
+                pageLength: 10,
+                responsive: true,
+                stateSave: false,
+                // Configuração adicional para evitar avisos
+                columnDefs: [{
+                    targets: '_all',
+                    defaultContent: ""
+                }],
+                // Ignorar avisos
+                retrieve: true,
+                bFilter: true
+            });
+            
+            console.log("DataTable inicializado com sucesso");
+        } catch (error) {
+            console.error("Erro ao inicializar DataTable:", error);
+        }
+    }
+    
+    // Função para ver detalhes de um pedido
+    function verDetalhesPedido(id) {
+        try {
+            console.log("Redirecionando para detalhes do pedido:", id);
+            
+            // Redirecionar para a URL de detalhes do pedido (mesmo formato usado em home.html)
+            window.location.href = `/pedidos/${id}/`;
+            
+        } catch (error) {
+            console.error("Erro ao redirecionar para detalhes do pedido:", error);
+            alert("Ocorreu um erro ao tentar abrir os detalhes do pedido. Tente novamente mais tarde.");
+        }
+    }
+    
+    // Função para aplicar filtros
+    function aplicarFiltros() {
+        console.log("Aplicando filtros:");
+        console.log("Empresa:", $("#filtro-empresa").val());
+        console.log("Contrato:", $("#filtro-contrato").val());
+        console.log("Período:", $("#filtro-periodo").val());
+        console.log("Status:", $("#filtro-status").val());
+        console.log("Valor mínimo:", $("#filtro-valor-minimo").val());
+        
+        carregarDados();
+    }
+    
+    // Função para limpar filtros
+    function limparFiltros() {
+        $("#filtro-empresa").val("");
+        $("#filtro-contrato").html('<option value="">Todos os contratos</option>');
+        $("#filtro-periodo").val("30");
+        $("#filtro-status").val("");
+        $("#filtro-valor-minimo").val("");
+        
+        // Restaurar o valor total de contratos original
+        $("#total-contratos-card").text("{{ total_escolas }}");
+        
+        carregarDados();
+    }
+    
+    // Função auxiliar para formatar valores monetários
+    function formatarValor(valor) {
+        if (isNaN(parseFloat(valor))) {
+            return "0,00";
+        }
+        
+        return parseFloat(valor).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // Função para tratar erros nas requisições
+    function tratarErroRequisicao(mensagem, callback) {
+        console.error("Erro na requisição:", mensagem);
+        $("#error-message").text(mensagem || "Ocorreu um erro ao processar sua solicitação.");
+        
+        // Limpar handler anterior, se existir
+        $("#btn-retry").off('click');
+        
+        // Adicionar novo handler
+        if (typeof callback === 'function') {
+            $("#btn-retry").on('click', function() {
+                $('#errorModal').modal('hide');
+                callback();
+            });
+        }
+        
+        // Mostrar modal de erro
+        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+        errorModal.show();
+        
+        // Adicionar mensagem de erro no dashboard para casos em que o modal não funcione
+        $("#dashboard-content").html(`
+            <div class="alert alert-danger">
+                <h4><i class="fas fa-exclamation-triangle me-2"></i>Erro</h4>
+                <p>${mensagem}</p>
+                <button class="btn btn-danger" onclick="carregarDados(true)">Tentar Novamente</button>
+            </div>
+        `);
+    }
+
+    // Função para atualizar os dados no dashboard
+    function atualizarDadosDashboard(data) {
+        try {
+            // Atualizar indicadores
+            if (data.indicadores) {
+                atualizarIndicadores(data.indicadores);
+            }
+            
+            // Atualizar gráficos
+            if (data.graficos) {
+                atualizarGraficos(data.graficos);
+            }
+            
+            // Atualizar tabelas
+            if (data.tabelas) {
+                atualizarTabelas(data.tabelas);
+            }
+            
+            // Atualizar lista de contratos
+            if (data.contratos) {
+                preencherSelectContratos(data.contratos);
+            }
+            
+            console.log("Dashboard atualizado com sucesso");
+        } catch (error) {
+            console.error("Erro ao atualizar dashboard:", error);
+            tratarErroRequisicao("Erro ao processar dados do dashboard: " + error.message);
+        }
+    }
+
+    // Função para atualizar os indicadores do dashboard
+    function atualizarIndicadores(indicadores) {
+        $("#total-contratos").text(indicadores.total_contratos || 0);
+        $("#valor-total").text(formatarValor(indicadores.valor_total || 0));
+        $("#valor-liquidado").text(formatarValor(indicadores.valor_liquidado || 0));
+        $("#valor-a-liquidar").text(formatarValor(indicadores.valor_a_liquidar || 0));
+    }
+
+    // Função para atualizar os gráficos do dashboard
+    function atualizarGraficos(graficos) {
+        if (graficos.pizza) {
+            atualizarGraficoPizza(graficos.pizza);
+        }
+        
+        if (graficos.barras) {
+            atualizarGraficoBarras(graficos.barras);
+        }
+    }
+
+    // Função para atualizar as tabelas do dashboard
+    function atualizarTabelas(tabelas) {
+        if (tabelas.contratos) {
+            atualizarTabelaContratos(tabelas.contratos);
+        }
+        
+        if (tabelas.itens_contrato) {
+            atualizarTabelaItensContrato(tabelas.itens_contrato);
+        }
+        
+        // Calcular estatísticas se houver dados disponíveis
+        if (tabelas.contratos && tabelas.contratos.length > 0) {
+            calcularEstatisticas(tabelas.contratos);
+        }
+    }
+
+    // Função para preencher o select de contratos
+    function preencherSelectContratos(contratos) {
+        const selectContratos = $("#select-contratos");
+        selectContratos.empty();
+        
+        // Adicionar opção padrão
+        selectContratos.append('<option value="">Selecione um contrato</option>');
+        
+        // Adicionar opções de contratos
+        contratos.forEach(contrato => {
+            selectContratos.append(`<option value="${contrato.id}">${contrato.numero} - ${contrato.objeto.substring(0, 50)}...</option>`);
+        });
+    }
+
+    // Função para atualizar o gráfico de pizza
+    function atualizarGraficoPizza(dados) {
+        try {
+            if (!dados || !Array.isArray(dados) || dados.length === 0) {
+                console.warn("Dados inválidos para o gráfico de pizza");
+                return;
+            }
+
+            const ctx = document.getElementById('grafico-pizza').getContext('2d');
+            
+            // Destruir gráfico existente se houver
+            if (window.chartPizza) {
+                window.chartPizza.destroy();
+            }
+            
+            // Preparar dados para o gráfico
+            const labels = dados.map(item => item.label);
+            const values = dados.map(item => item.value);
+            const colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69', '#6610f2'];
+            
+            // Criar novo gráfico
+            window.chartPizza = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        hoverBackgroundColor: colors.slice(0, labels.length).map(color => adjustBrightness(color, -20)),
+                        hoverBorderColor: "rgba(234, 236, 244, 1)",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Erro ao atualizar gráfico de pizza:", error);
+        }
+    }
+
+    // Função para atualizar o gráfico de barras
+    function atualizarGraficoBarras(dados) {
+        try {
+            if (!dados || !Array.isArray(dados) || dados.length === 0) {
+                console.warn("Dados inválidos para o gráfico de barras");
+                return;
+            }
+            
+            const ctx = document.getElementById('grafico-barras').getContext('2d');
+            
+            // Destruir gráfico existente se houver
+            if (window.chartBarras) {
+                window.chartBarras.destroy();
+            }
+            
+            // Preparar dados para o gráfico
+            const labels = dados.map(item => item.label);
+            const values = dados.map(item => item.value);
+            
+            // Criar novo gráfico
+            window.chartBarras = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Valores por Categoria',
+                        data: values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toLocaleString('pt-BR');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Erro ao atualizar gráfico de barras:", error);
+        }
+    }
+
+    // Função para atualizar a tabela de contratos
+    function atualizarTabelaContratos(contratos) {
+        var tabela = $("#tabela-contratos tbody");
+        tabela.empty();
+        
+        if (contratos.length === 0) {
+            tabela.append('<tr><td colspan="6" class="text-center">Nenhum contrato encontrado</td></tr>');
+            return;
+        }
+        
+        contratos.forEach(function(contrato) {
+            tabela.append(`
+                <tr data-id="${contrato.id}" class="linha-contrato">
+                    <td>${contrato.numero || '-'}</td>
+                    <td>${contrato.fornecedor || '-'}</td>
+                    <td>${contrato.objeto || '-'}</td>
+                    <td>${formatarValor(contrato.valor_total || 0)}</td>
+                    <td>${formatarValor(contrato.valor_liquidado || 0)}</td>
+                    <td>${formatarValor(contrato.valor_a_liquidar || 0)}</td>
+                </tr>
+            `);
+        });
+        
+        // Reativar eventos de clique nas linhas
+        $(".linha-contrato").click(function() {
+            var id = $(this).data('id');
+            mostrarDetalhesContrato(id);
+        });
+    }
+
+    // Função para atualizar a tabela de itens do contrato
+    function atualizarTabelaItensContrato(itens) {
+        var tabela = $("#tabela-itens-contrato tbody");
+        tabela.empty();
+        
+        if (itens.length === 0) {
+            tabela.append('<tr><td colspan="5" class="text-center">Nenhum item encontrado</td></tr>');
+            return;
+        }
+        
+        itens.forEach(function(item) {
+            tabela.append(`
+                <tr>
+                    <td>${item.descricao || '-'}</td>
+                    <td>${item.quantidade || 0}</td>
+                    <td>${formatarValor(item.valor_unitario || 0)}</td>
+                    <td>${formatarValor(item.valor_total || 0)}</td>
+                    <td>${item.status || '-'}</td>
+                </tr>
+            `);
+        });
+    }
+
+    // Função auxiliar para ajustar o brilho de uma cor hexadecimal
+    function adjustBrightness(hex, percent) {
+        // Validar cor hexadecimal
+        hex = hex.replace(/^\s*#|\s*$/g, '');
+        if(hex.length == 3) {
+            hex = hex.replace(/(.)/g, '$1$1');
+        }
+        
+        // Converter para valores RGB
+        var r = parseInt(hex.substr(0, 2), 16);
+        var g = parseInt(hex.substr(2, 2), 16);
+        var b = parseInt(hex.substr(4, 2), 16);
+        
+        // Ajustar brilho
+        r = parseInt(r * (100 + percent) / 100);
+        g = parseInt(g * (100 + percent) / 100);
+        b = parseInt(b * (100 + percent) / 100);
+        
+        // Limitar valores
+        r = (r < 255) ? r : 255;
+        g = (g < 255) ? g : 255;
+        b = (b < 255) ? b : 255;
+        
+        // Converter de volta para hexadecimal
+        r = r.toString(16);
+        g = g.toString(16);
+        b = b.toString(16);
+        
+        // Adicionar zeros à esquerda se necessário
+        r = (r.length == 1) ? '0' + r : r;
+        g = (g.length == 1) ? '0' + g : g;
+        b = (b.length == 1) ? '0' + b : b;
+        
+        return '#' + r + g + b;
+    }
+
+    // Função para exportar dados para Excel
+    function exportarParaExcel(tabela, nomeArquivo) {
+        // Verificar se a biblioteca SheetJS (XLSX) está disponível
+        if (typeof XLSX === 'undefined') {
+            console.error('A biblioteca SheetJS (XLSX) não está disponível');
+            alert('Não foi possível exportar os dados. Biblioteca de exportação não disponível.');
+            return;
+        }
+
+        try {
+            // Selecionar a tabela pelo ID
+            const tabelaElement = document.getElementById(tabela);
+            if (!tabelaElement) {
+                console.error(`Tabela com ID ${tabela} não encontrada`);
+                return;
+            }
+
+            // Criar uma matriz para armazenar os dados da tabela
+            let dados = [];
+            
+            // Obter cabeçalhos da tabela
+            const cabecalhos = [];
+            const thElements = tabelaElement.querySelectorAll('thead th');
+            thElements.forEach(th => cabecalhos.push(th.textContent.trim()));
+            dados.push(cabecalhos);
+            
+            // Obter dados das linhas
+            const linhas = tabelaElement.querySelectorAll('tbody tr');
+            linhas.forEach(linha => {
+                const dadosLinha = [];
+                linha.querySelectorAll('td').forEach(celula => {
+                    dadosLinha.push(celula.textContent.trim());
+                });
+                dados.push(dadosLinha);
+            });
+            
+            // Criar uma planilha
+            const ws = XLSX.utils.aoa_to_sheet(dados);
+            
+            // Criar um livro
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+            
+            // Exportar para Excel
+            XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+            
+            console.log(`Dados exportados com sucesso para ${nomeArquivo}.xlsx`);
+        } catch (error) {
+            console.error('Erro ao exportar para Excel:', error);
+            alert('Ocorreu um erro ao exportar os dados. Por favor, tente novamente.');
+        }
+    }
+
+    // Adicionar botões de exportação para as tabelas
+    $(document).ready(function() {
+        // Adicionar botão para exportar tabela de contratos
+        $('#table-contratos-container').prepend(
+            '<button class="btn btn-sm btn-primary export-btn" onclick="exportarParaExcel(\'table-contratos\', \'Contratos\')">' +
+            '<i class="fas fa-file-excel"></i> Exportar para Excel</button>'
+        );
+        
+        // Adicionar botão para exportar tabela de itens de contrato
+        $('#table-itens-container').prepend(
+            '<button class="btn btn-sm btn-primary export-btn" onclick="exportarParaExcel(\'table-itens-contrato\', \'Itens_Contrato\')">' +
+            '<i class="fas fa-file-excel"></i> Exportar para Excel</button>'
+        );
+
+        // Carregar a biblioteca SheetJS (XLSX) dinamicamente se não estiver disponível
+        if (typeof XLSX === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+            script.async = true;
+            script.onload = function() {
+                console.log('Biblioteca SheetJS (XLSX) carregada com sucesso');
+            };
+            script.onerror = function() {
+                console.error('Falha ao carregar a biblioteca SheetJS (XLSX)');
+            };
+            document.head.appendChild(script);
+        }
+    });
+</script>
+{% endblock %} 

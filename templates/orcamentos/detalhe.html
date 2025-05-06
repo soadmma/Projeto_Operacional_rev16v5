@@ -1,0 +1,169 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Detalhe do Orçamento{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>
+                    Orçamento #{{ orcamento.id }}
+                </h2>
+                <div>
+                    {% if orcamento.status == 'pendente' %}
+                        <a href="{% url 'orcamentos:aprovar' orcamento.id %}" class="btn btn-success me-2">
+                            <i class="fas fa-check me-1"></i> Aprovar
+                        </a>
+                        <a href="{% url 'orcamentos:rejeitar' orcamento.id %}" class="btn btn-danger me-2">
+                            <i class="fas fa-times me-1"></i> Rejeitar
+                        </a>
+                    {% endif %}
+                    {% if orcamento.status == 'aprovado' %}
+                        <a href="{% url 'orcamentos:gerar_pedido' orcamento.id %}" class="btn btn-primary me-2">
+                            <i class="fas fa-file-invoice me-1"></i> Gerar Pedido
+                        </a>
+                    {% endif %}
+                    <div class="btn-group me-2">
+                        <a href="{% url 'orcamentos:exportar_pdf' orcamento.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-file-pdf me-1"></i> PDF
+                        </a>
+                        <a href="{% url 'orcamentos:exportar_excel' orcamento.id %}" class="btn btn-outline-success">
+                            <i class="fas fa-file-excel me-1"></i> Excel
+                        </a>
+                    </div>
+                    <a href="{% url 'orcamentos:lista' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Informações do Orçamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Nome</label>
+                        <p class="mb-0">{{ orcamento.nome }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Status</label>
+                        <p class="mb-0">
+                            {% if orcamento.status == 'pendente' %}
+                                <span class="badge bg-warning">Pendente</span>
+                            {% elif orcamento.status == 'aprovado' %}
+                                <span class="badge bg-success">Aprovado</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rejeitado</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Data de Criação</label>
+                        <p class="mb-0">{{ orcamento.data_criacao|date:'d/m/Y H:i' }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Forma de Pagamento:</strong>
+                        {% if orcamento.forma_pagamento == 'avista' %}
+                            À Vista
+                        {% elif orcamento.forma_pagamento == '30dias' %}
+                            30 Dias
+                        {% elif orcamento.forma_pagamento == '60dias' %}
+                            60 Dias
+                        {% elif orcamento.forma_pagamento == '90dias' %}
+                            90 Dias
+                        {% elif orcamento.forma_pagamento == 'parcelado' %}
+                            Parcelado
+                        {% elif orcamento.forma_pagamento == 'outros' %}
+                            Outros
+                        {% else %}
+                            <span class="text-muted">Não informada</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Data Prevista de Entrega:</strong> 
+                        {% if orcamento.data_entrega_prevista %}
+                            {{ orcamento.data_entrega_prevista|date:'d/m/Y' }}
+                        {% else %}
+                            <span class="text-muted">Não informada</span>
+                        {% endif %}
+                    </div>
+                    {% if orcamento.status != 'pendente' %}
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Data de Aprovação/Rejeição</label>
+                            <p class="mb-0">{{ orcamento.data_aprovacao|date:'d/m/Y H:i' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Usuário</label>
+                            <p class="mb-0">
+                                {% if orcamento.usuario_aprovador %}
+                                    {{ orcamento.usuario_aprovador.get_full_name|default:orcamento.usuario_aprovador.username }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% if orcamento.justificativa %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Justificativa</label>
+                                <p class="mb-0">{{ orcamento.justificativa }}</p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Itens do Orçamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-center">Quantidade</th>
+                                    <th class="text-end">Valor Unitário</th>
+                                    <th class="text-end">Total</th>
+                                    <th>Fornecedor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in itens %}
+                                <tr>
+                                    <td>{{ item.produto.nome }}</td>
+                                    <td class="text-center">{{ item.quantidade }}</td>
+                                    <td class="text-end">R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">R$ {{ item.total|floatformat:2 }}</td>
+                                    <td>{{ item.fornecedor.razao_social|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Nenhum item cadastrado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Total:</td>
+                                    <td class="text-end fw-bold">R$ {{ orcamento.total|floatformat:2 }}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

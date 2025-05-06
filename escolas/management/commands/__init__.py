@@ -1,0 +1,1 @@
+# Arquivo de inicialização do pacote de comandos para escolas 

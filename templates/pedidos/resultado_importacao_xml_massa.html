@@ -1,0 +1,150 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Resultado da Importação de XMLs - CyberGo{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-2 bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-check me-2"></i>
+                            Resultado da Importação de XMLs em Massa
+                        </h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <span>Total de arquivos processados: <strong>{{ total_arquivos }}</strong></span>
+                    </div>
+                    
+                    {% if xmls_sucesso %}
+                    <div class="mb-4">
+                        <h5 class="text-success mb-3">
+                            <i class="bi bi-check-circle me-2"></i>
+                            XMLs importados com sucesso ({{ xmls_sucesso|length }})
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nº da NF</th>
+                                        <th>Chave NFe</th>
+                                        <th>Pedido</th>
+                                        <th>Emitente</th>
+                                        <th>Data Emissão</th>
+                                        <th>Valor Total</th>
+                                        <th>Previsão Entrega</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for xml in xmls_sucesso %}
+                                    <tr>
+                                        <td>{{ xml.nota.numero_nfe }}</td>
+                                        <td>
+                                            <small class="text-muted">{{ xml.nota.chave_nfe|truncatechars:20 }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'pedidos:detalhes' pk=xml.nota.pedido.id %}" class="btn btn-sm btn-outline-primary">
+                                                #{{ xml.nota.pedido.id }}
+                                            </a>
+                                        </td>
+                                        <td>{{ xml.nota.razao_social_emitente }}</td>
+                                        <td>{{ xml.nota.data_emissao|date:"d/m/Y" }}</td>
+                                        <td>R$ {{ xml.nota.valor_total|floatformat:2 }}</td>
+                                        <td>
+                                            {% if xml.nota.pedido.previsao_entrega_fornecedor %}
+                                                {{ xml.nota.pedido.previsao_entrega_fornecedor|date:"d/m/Y" }}
+                                            {% else %}
+                                                <span class="text-muted">Não informada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'pedidos:nota_fiscal_detalhes' nf_id=xml.nota.id %}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if xmls_erro %}
+                    <div class="mb-4">
+                        <h5 class="text-danger mb-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            XMLs não importados ({{ xmls_erro|length }})
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome do Arquivo</th>
+                                        <th>Nº da NF</th>
+                                        <th>Emitente</th>
+                                        <th>Problema</th>
+                                        <th>Informações Complementares</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for xml in xmls_erro %}
+                                    <tr>
+                                        <td>{{ xml.nome_arquivo }}</td>
+                                        <td>{{ xml.numero_nfe }}</td>
+                                        <td>{{ xml.emitente }}</td>
+                                        <td class="text-danger">{{ xml.mensagem }}</td>
+                                        <td>
+                                            <small class="text-muted">{{ xml.info_complementar|default:"Não disponível"|truncatechars:100 }}</small>
+                                            {% if xml.info_complementar %}
+                                            <button class="btn btn-sm btn-link p-0 ms-1" 
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top" 
+                                                    title="{{ xml.info_complementar }}">
+                                                <i class="bi bi-info-circle"></i>
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'pedidos:importar_xml_nfe' %}" class="btn btn-sm btn-warning">
+                                                <i class="bi bi-link"></i> Importar Manual
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'core:importar_xml_nfe_massa' %}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-repeat me-1"></i> Fazer Nova Importação
+                        </a>
+                        <a href="{% url 'pedidos:lista' %}" class="btn btn-primary">
+                            <i class="bi bi-list-check me-1"></i> Voltar para Lista de Pedidos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function(){
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,85 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if produto.id %}Editar Produto{% else %}Novo Produto{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="card shadow-lg p-4 w-100" style="max-width: 700px; border-radius: 2rem; background: linear-gradient(135deg, #f8faff 80%, #e6e6ff 100%); box-shadow: 0 12px 40px rgba(67,3,240,0.10);">
+        <div class="text-center mb-4">
+            <div style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #4303f0 60%, #36b9cc 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(67,3,240,0.15);">
+                <i class="fas fa-box-open fa-2x text-white"></i>
+            </div>
+            <h2 class="fw-bold mt-3 mb-1" style="letter-spacing: 1px; color: #4303f0;">
+                {% if produto.id %}Editar Produto{% else %}Novo Produto{% endif %}
+            </h2>
+            <p class="text-muted mb-0">Preencha os dados abaixo para cadastrar um produto</p>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <label for="id_nome" class="form-label">Nome do Produto <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                        <input type="text" name="nome" id="id_nome" class="form-control" required placeholder="Ex: Caderno Espiral" value="{{ produto.nome|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="id_codigo" class="form-label">Código</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                        <input type="text" name="codigo" id="id_codigo" class="form-control" placeholder="Ex: CAD001" value="{{ produto.codigo|default:'' }}">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="id_descricao" class="form-label">Descrição</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-align-left"></i></span>
+                    <textarea name="descricao" id="id_descricao" class="form-control" rows="3" placeholder="Detalhes do produto">{{ produto.descricao|default:'' }}</textarea>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_valor_unitario" class="form-label">Valor Unitário (R$) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                        <input type="text" name="valor_unitario" id="id_valor_unitario" class="form-control" required placeholder="Ex: 15.90" value="{{ produto.valor_unitario|default:'' }}">
+                    </div>
+                    <div class="form-text">Use ponto ou vírgula como separador decimal.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_unidade_medida" class="form-label">Unidade de Medida</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-ruler"></i></span>
+                        <input type="text" name="unidade_medida" id="id_unidade_medida" class="form-control" placeholder="Ex: Unidade, Caixa" value="{{ produto.unidade_medida|default:'Unidade' }}">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="id_fornecedor" class="form-label">Fornecedor</label>
+                <select name="fornecedor" id="id_fornecedor" class="form-select">
+                    <option value="">Selecione um fornecedor</option>
+                    {% for fornecedor in fornecedores %}
+                        <option value="{{ fornecedor.id }}" {% if produto.fornecedor and produto.fornecedor.id == fornecedor.id %}selected{% endif %}>{{ fornecedor.razao_social }}{% if fornecedor.nome %} ({{ fornecedor.nome }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if produto.id %}
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="ativo" id="id_ativo" class="form-check-input" {% if produto.ativo %}checked{% endif %}>
+                <label for="id_ativo" class="form-check-label">Produto Ativo</label>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="{% url 'produtos:lista' %}" class="btn btn-secondary px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Voltar para Produtos
+                </a>
+                <button type="submit" class="btn btn-primary px-4 shadow-sm" style="font-size: 1.1rem;">
+                    <i class="bi bi-save me-1"></i> Salvar Produto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

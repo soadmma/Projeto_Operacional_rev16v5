@@ -1,0 +1,223 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="card shadow-lg p-4 w-100" style="max-width: 750px; border-radius: 2rem; background: linear-gradient(135deg, #f8faff 80%, #e6e6ff 100%); box-shadow: 0 12px 40px rgba(67,3,240,0.10);">
+        <div class="text-center mb-4">
+            <div style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #4303f0 60%, #36b9cc 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(67,3,240,0.15);">
+                <i class="fas fa-users fa-2x text-white"></i>
+            </div>
+            <h2 class="fw-bold mt-3 mb-1" style="letter-spacing: 1px; color: #4303f0;">
+                {% if fornecedor %}Editar{% else %}Novo{% endif %} Fornecedor
+            </h2>
+            <p class="text-muted mb-0">Preencha os dados abaixo para cadastrar um fornecedor parceiro</p>
+        </div>
+        <!-- Passos visuais -->
+        <div class="d-flex justify-content-center mb-4">
+            <div class="stepper d-flex align-items-center gap-2">
+                <div class="step active"><i class="fas fa-info"></i></div>
+                <div class="step-line"></div>
+                <div class="step"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="step-line"></div>
+                <div class="step"><i class="fas fa-user-friends"></i></div>
+            </div>
+        </div>
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+            <!-- Bloco: Dados principais -->
+            <div class="mb-4">
+                <h5 class="fw-semibold mb-3 text-primary"><i class="fas fa-id-badge me-2"></i>Dados da Empresa</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="razao_social" class="form-label">Razão Social <span class="text-danger" data-bs-toggle="tooltip" title="Campo obrigatório">*</span></label>
+                        <div class="input-group has-validation">
+                            <span class="input-group-text"><i class="fas fa-building"></i></span>
+                            <input type="text" class="form-control" id="razao_social" name="razao_social" placeholder="Ex: Indústria XPTO Ltda" value="{{ fornecedor.razao_social|default:'' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="nome" class="form-label">Nome Fantasia</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                            <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: XPTO" value="{{ fornecedor.nome|default:'' }}">
+                        </div>
+                        <small class="text-muted">Como o fornecedor é conhecido</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cnpj" class="form-label">CNPJ/CPF <span class="text-danger" data-bs-toggle="tooltip" title="Campo obrigatório">*</span></label>
+                        <div class="input-group has-validation">
+                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                            <input type="text" class="form-control" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00" value="{{ fornecedor.cnpj|default:'' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="inscricao_estadual" class="form-label">Inscrição Estadual</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
+                            <input type="text" class="form-control" id="inscricao_estadual" name="inscricao_estadual" placeholder="Opcional" value="{{ fornecedor.inscricao_estadual|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tipo_fornecedor" class="form-label">Tipo do Fornecedor <span class="text-danger" data-bs-toggle="tooltip" title="Campo obrigatório">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                            <select class="form-select" id="tipo_fornecedor" name="tipo_fornecedor" required>
+                                <option value="FIXO" {% if fornecedor.tipo_fornecedor == 'FIXO' %}selected{% endif %}>Fixo</option>
+                                <option value="ESPORADICO" {% if fornecedor.tipo_fornecedor == 'ESPORADICO' %}selected{% endif %}>Esporádico</option>
+                            </select>
+                        </div>
+                        <small class="text-muted">Fixo (regular) ou Esporádico (ocasional)</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="website" class="form-label">Website</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                            <input type="url" class="form-control" id="website" name="website" placeholder="https://" value="{{ fornecedor.website|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dia_pedido_recorrente" class="form-label">Dia do Pedido Recorrente</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                            <input type="number" class="form-control" id="dia_pedido_recorrente" name="dia_pedido_recorrente" placeholder="Dia do mês (1-31)" min="1" max="31" value="{{ fornecedor.dia_pedido_recorrente|default:'' }}">
+                        </div>
+                        <small class="text-muted">Dia do mês para gerar pedidos recorrentes automaticamente</small>
+                    </div>
+                </div>
+            </div>
+            <!-- Bloco: Localização -->
+            <div class="mb-4">
+                <h5 class="fw-semibold mb-3 text-primary"><i class="fas fa-map-marker-alt me-2"></i>Localização</h5>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="endereco" class="form-label">Endereço Completo</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                            <textarea class="form-control" id="endereco" name="endereco" rows="2" placeholder="Rua, número, bairro, complemento">{{ fornecedor.endereco|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cep" class="form-label">CEP</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-mail-bulk"></i></span>
+                            <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000" value="{{ fornecedor.cep|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cidade" class="form-label">Cidade</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-city"></i></span>
+                            <input type="text" class="form-control" id="cidade" name="cidade" placeholder="Cidade" value="{{ fornecedor.cidade|default:'' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="estado" class="form-label">Estado</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-flag"></i></span>
+                            <input type="text" class="form-control" id="estado" name="estado" placeholder="UF" value="{{ fornecedor.estado|default:'' }}" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bloco: Contato -->
+            <div class="mb-4">
+                <h5 class="fw-semibold mb-3 text-primary"><i class="fas fa-user-friends me-2"></i>Contato</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="telefone" class="form-label">Telefone Principal</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(00) 00000-0000" value="{{ fornecedor.telefone|default:'' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="telefone_secundario" class="form-label">Telefone Secundário</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone-alt"></i></span>
+                            <input type="text" class="form-control" id="telefone_secundario" name="telefone_secundario" placeholder="Opcional" value="{{ fornecedor.telefone_secundario|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">E-mail Principal</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="email@exemplo.com" value="{{ fornecedor.email|default:'' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email_secundario" class="form-label">E-mail Secundário</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope-open-text"></i></span>
+                            <input type="email" class="form-control" id="email_secundario" name="email_secundario" placeholder="Opcional" value="{{ fornecedor.email_secundario|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pessoa_contato" class="form-label">Pessoa de Contato</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="pessoa_contato" name="pessoa_contato" placeholder="Nome do contato" value="{{ fornecedor.pessoa_contato|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="cargo_contato" class="form-label">Cargo do Contato</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
+                            <input type="text" class="form-control" id="cargo_contato" name="cargo_contato" placeholder="Cargo" value="{{ fornecedor.cargo_contato|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label for="descricao" class="form-label">Descrição do Fornecedor</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="3" placeholder="Informações adicionais sobre o fornecedor">{{ fornecedor.descricao|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="{% url 'fornecedores:listar_fornecedores' %}" class="btn btn-secondary px-4">
+                    <i class="fas fa-arrow-left me-1"></i> Voltar
+                </a>
+                <button type="submit" class="btn btn-primary px-4 shadow-sm" style="font-size: 1.1rem;">
+                    <i class="fas fa-save me-1"></i> Salvar Cadastro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .stepper .step {
+        width: 36px;
+        height: 36px;
+        background: #fff;
+        border: 2px solid #4303f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: #4303f0;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(67,3,240,0.08);
+        transition: background 0.3s, color 0.3s;
+    }
+    .stepper .step.active {
+        background: linear-gradient(135deg, #4303f0 60%, #36b9cc 100%);
+        color: #fff;
+        border: none;
+    }
+    .stepper .step-line {
+        width: 32px;
+        height: 3px;
+        background: #e0e0e0;
+        border-radius: 2px;
+    }
+</style>
+
+<script>
+    // Ativar tooltips do Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
+{% endblock %} 

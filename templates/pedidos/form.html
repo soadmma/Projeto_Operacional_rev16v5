@@ -1,0 +1,651 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if pedido.id %}Editar Pedido{% else %}Novo Pedido{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Incluir jQuery no início do conteúdo -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<div class="page-header">
+    <h2>
+        <i class="bi bi-cart me-2"></i>
+        {% if pedido.id %}Editar Pedido{% else %}Novo Pedido{% endif %}
+    </h2>
+    <a href="{% url 'pedidos:lista' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Voltar para Pedidos
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="formPedido">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <label for="id_escola" class="form-label">Contrato <span class="text-danger">*</span></label>
+                            <select name="escola" id="id_escola" class="form-select" required {% if pedido.id %}disabled{% endif %}>
+                                <option value="">Selecione um contrato...</option>
+                                {% for escola in escolas %}
+                                    <option value="{{ escola.id }}" 
+                                        {% if pedido.escola_id == escola.id %}selected{% endif %}
+                                        data-budget="{{ escola.budget }}">
+                                        {{ escola.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">O contrato não pode ser alterado após a criação do pedido.</div>
+                            
+                            <!-- Alerta de orçamento -->
+                            <div id="alertaOrcamento" class="alert alert-danger mt-2 d-none">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                O valor do pedido excede o orçamento disponível para este contrato!
+                                <div class="mt-1">
+                                    <strong>Orçamento:</strong> R$ <span id="valorOrcamento">0,00</span>
+                                    <br>
+                                    <strong>Valor atual:</strong> R$ <span id="valorAtual">0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% if pedido.id %}
+                        <!-- Se for um pedido existente, mostra a data da solicitação -->
+                        <div class="col-md-4">
+                            <label for="id_data_solicitacao" class="form-label">Data de Solicitação</label>
+                            <input type="datetime-local" name="data_solicitacao" id="id_data_solicitacao" class="form-control"
+                                   value="{{ pedido.data_solicitacao|date:'Y-m-d\TH:i' }}" readonly>
+                        </div>
+                        {% else %}
+                        <!-- Se for um novo pedido, campo oculto para a data de solicitação -->
+                        <input type="hidden" name="data_solicitacao" id="id_data_solicitacao">
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <label for="id_fornecedor" class="form-label">Fornecedor</label>
+                            <select name="fornecedor" id="id_fornecedor" class="form-select" {% if pedido.id %}disabled{% endif %}>
+                                <option value="">Selecione um fornecedor (opcional)...</option>
+                                {% for fornecedor in fornecedores %}
+                                    <option value="{{ fornecedor.id }}" 
+                                        {% if pedido.fornecedor_id == fornecedor.id %}selected{% endif %}
+                                        data-dia-recorrente="{{ fornecedor.dia_pedido_recorrente|default:'' }}">
+                                        {{ fornecedor.razao_social }} {% if fornecedor.nome %}({{ fornecedor.nome }}){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Fornecedor para quem este pedido será enviado.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="display: block;">&nbsp;</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="pedido_recorrente" id="id_pedido_recorrente" value="on"
+                                       {% if pedido.pedido_recorrente %}checked{% endif %} {% if pedido.id %}disabled{% endif %} 
+                                       onchange="document.getElementById('hidden_pedido_recorrente').value = this.checked ? 'on' : 'off';">
+                                <input type="hidden" name="hidden_pedido_recorrente" id="hidden_pedido_recorrente" value="{% if pedido.pedido_recorrente %}on{% else %}off{% endif %}">
+                                <label class="form-check-label" for="id_pedido_recorrente">
+                                    Pedido Recorrente
+                                </label>
+                                <div class="form-text" id="recorrenciaInfo">
+                                    {% if fornecedor and fornecedor.dia_pedido_recorrente %}
+                                    Será gerado automaticamente todo dia {{ fornecedor.dia_pedido_recorrente }} do mês.
+                                    {% else %}
+                                    Selecione um fornecedor com dia de recorrência configurado.
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if pedido.id %}
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="id_status" class="form-label">Status <span class="text-danger">*</span></label>
+                            <select name="status" id="id_status" class="form-select" required>
+                                {% for key, value in status_choices %}
+                                    <option value="{{ key }}" {% if pedido.status == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <label for="id_observacoes" class="form-label">Observações</label>
+                        <textarea name="observacoes" id="id_observacoes" class="form-control" rows="2">{{ pedido.observacoes|default:'' }}</textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3">Itens do Pedido</h5>
+                    
+                    <div id="itens-container">
+                        {% if pedido.itens.all %}
+                            {% for item in pedido.itens.all %}
+                            <div class="row item-row mb-2">
+                                <div class="col-md-6">
+                                    <select name="produto[]" class="form-select produto-select" required>
+                                        <option value="">Selecione um produto...</option>
+                                        {% for produto in produtos %}
+                                            <option 
+                                                value="{{ produto.id }}" 
+                                                data-valor="{{ produto.valor_unitario }}"
+                                                {% if item.produto_id == produto.id %}selected{% endif %}
+                                            >
+                                                {{ produto.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" name="quantidade[]" class="form-control quantidade-input" placeholder="Quantidade" 
+                                           min="1" required value="{{ item.quantidade }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control valor-unitario" readonly style="background-color: #f8f9fa;" value="{{ item.valor_unitario }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-danger btn-remover-item">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="item_id[]" value="{{ item.id }}">
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="row item-row mb-2">
+                                <div class="col-md-6">
+                                    <select name="produto[]" class="form-select produto-select" required>
+                                        <option value="">Selecione um produto...</option>
+                                        {% for produto in produtos %}
+                                            <option 
+                                                value="{{ produto.id }}" 
+                                                data-valor="{{ produto.valor_unitario }}"
+                                            >
+                                                {{ produto.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" name="quantidade[]" class="form-control quantidade-input" placeholder="Quantidade" min="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control valor-unitario" readonly style="background-color: #f8f9fa;">
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-danger btn-remover-item">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="item_id[]" value="">
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button type="button" id="btnAdicionarItem" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Adicionar Item
+                        </button>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- Espaço para mensagens ou outros controles -->
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="mb-3">Resumo do Pedido</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Total de Itens:</strong>
+                                        <span id="totalItens">0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Valor Total:</strong>
+                                        <span id="valorTotal">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-white d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'pedidos:lista' %}'">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitPedido" onclick="logFormSubmit()">
+                            <i class="bi bi-check-circle me-1"></i> Salvar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template para novos itens -->
+<template id="item-template">
+    <div class="row item-row mb-2">
+        <div class="col-md-6">
+            <select name="produto[]" class="form-select produto-select" required>
+                <option value="">Selecione um produto...</option>
+                {% for produto in produtos %}
+                    <option 
+                        value="{{ produto.id }}" 
+                        data-valor="{{ produto.valor_unitario }}"
+                    >
+                        {{ produto.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="quantidade[]" class="form-control quantidade-input" placeholder="Quantidade" min="1" required>
+        </div>
+        <div class="col-md-3">
+            <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input type="text" class="form-control valor-unitario" readonly style="background-color: #f8f9fa;">
+            </div>
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-remover-item">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <input type="hidden" name="item_id[]" value="">
+    </div>
+</template>
+
+<script>
+    // Verificar se o jQuery está carregado
+    if (typeof jQuery === 'undefined') {
+        console.error('ERRO: jQuery não está carregado! A funcionalidade de adicionar/remover itens não funcionará.');
+        // Removendo o alerta para não incomodar o usuário
+        // Tentando carregar o jQuery dinamicamente
+        var script = document.createElement('script');
+        script.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
+        script.integrity = 'sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=';
+        script.crossOrigin = 'anonymous';
+        document.head.appendChild(script);
+        
+        script.onload = function() {
+            console.log('jQuery carregado dinamicamente com sucesso!');
+            setTimeout(inicializarFuncionalidades, 100);
+        };
+    } else {
+        console.log('jQuery carregado com sucesso: versão ' + jQuery.fn.jquery);
+        $(document).ready(inicializarFuncionalidades);
+    }
+
+    function inicializarFuncionalidades() {
+        // Debug: Exibe todos os valores de produtos disponíveis
+        console.log('PRODUTOS DISPONÍVEIS:');
+        $('.produto-select option').each(function() {
+            const id = $(this).val();
+            const nome = $(this).text();
+            const valor = $(this).attr('data-valor');
+            if (id) {
+                console.log(`ID: ${id}, Nome: ${nome}, Valor: ${valor}, Tipo: ${typeof valor}`);
+            }
+        });
+        
+        // Formata os valores dos itens existentes ao carregar a página
+        $('.valor-unitario').each(function() {
+            const valor = $(this).val() || '0';
+            if (valor) {
+                $(this).val(Number(valor).toFixed(2).replace('.', ','));
+            }
+        });
+        
+        // Função para atualizar o valor unitário ao selecionar um produto
+        $(document).on('change', '.produto-select', function() {
+            const select = $(this);
+            const option = select.find('option:selected');
+            const row = select.closest('.item-row');
+            const valorUnitarioField = row.find('.valor-unitario');
+            
+            // Se nenhuma opção foi selecionada, limpa o campo
+            if (!option.val()) {
+                valorUnitarioField.val('');
+                atualizarTotais();
+                return;
+            }
+            
+            // Obtém o valor unitário diretamente do elemento option
+            const valor = option.attr('data-valor');
+            console.log('Produto selecionado:', option.text());
+            console.log('Valor do atributo data-valor:', valor);
+            
+            if (valor && valor !== 'None' && valor !== 'undefined') {
+                try {
+                    // Converte para número e formata com 2 casas decimais
+                    const num = parseFloat(valor.replace(',', '.'));
+                    if (!isNaN(num)) {
+                        const valorFormatado = num.toFixed(2).replace('.', ',');
+                        valorUnitarioField.val(valorFormatado);
+                        console.log('Valor formatado definido:', valorFormatado);
+                    } else {
+                        console.log('Valor não é um número válido:', valor);
+                        valorUnitarioField.val('0,00');
+                    }
+                } catch (e) {
+                    console.error('Erro ao processar valor:', e);
+                    valorUnitarioField.val('0,00');
+                }
+            } else {
+                console.log('Valor unitário não encontrado ou inválido');
+                valorUnitarioField.val('0,00');
+            }
+            
+            atualizarTotais();
+        });
+        
+        // Função para atualizar os totais ao alterar a quantidade
+        $(document).on('input', '.quantidade-input', function() {
+            atualizarTotais();
+        });
+        
+        // Adiciona um novo item
+        $('#btnAdicionarItem').click(function() {
+            // Log para depuração
+            console.log('Adicionando novo item ao pedido...');
+            
+            // Criar uma cópia da primeira linha de item
+            const primeiraLinha = $('.item-row:first').clone();
+            
+            // Limpar os valores da cópia
+            primeiraLinha.find('select.produto-select').val('');
+            primeiraLinha.find('input.quantidade-input').val('');
+            primeiraLinha.find('input.valor-unitario').val('');
+            primeiraLinha.find('input[name="item_id[]"]').val('');
+            
+            // Adicionar a nova linha ao container
+            $('#itens-container').append(primeiraLinha);
+            
+            // Log de confirmação
+            console.log('Item adicionado com sucesso! Total de itens:', $('.item-row').length);
+            
+            // Atualizar os totais
+            atualizarTotais();
+        });
+        
+        // Remove um item
+        $(document).on('click', '.btn-remover-item', function(e) {
+            // Evitar comportamento padrão
+            e.preventDefault();
+            
+            // Log para depuração
+            console.log('Removendo item...');
+            
+            // Contar o número total de itens
+            const totalItens = $('.item-row').length;
+            console.log('Total de itens antes da remoção:', totalItens);
+            
+            // Verificar se podemos remover (manter pelo menos um item)
+            if (totalItens > 1) {
+                // Remover a linha
+                $(this).closest('.item-row').remove();
+                console.log('Item removido. Restantes:', $('.item-row').length);
+                
+                // Atualizar totais
+                atualizarTotais();
+            } else {
+                // Alertar o usuário
+                mostrarAlerta('O pedido deve ter pelo menos um item.');
+                console.log('Tentativa de remoção cancelada: é preciso manter pelo menos um item');
+            }
+        });
+        
+        // Trigger para inicializar os valores dos produtos já selecionados
+        setTimeout(function() {
+            console.log('Iniciando trigger para produtos selecionados');
+            $('.produto-select').each(function() {
+                if ($(this).val()) {
+                    console.log('Produto já selecionado, ID:', $(this).val());
+                    $(this).trigger('change');
+                }
+            });
+            // Inicializa os totais após configurar os produtos
+            atualizarTotais();
+        }, 100);
+
+        // Função para formatar valores monetários
+        function formatarValorMonetario(valor) {
+            return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor);
+        }
+        
+        // Função para atualizar informações de recorrência
+        function atualizarInfoRecorrencia() {
+            var fornecedorSelect = $('#id_fornecedor');
+            var recorrenciaInfo = $('#recorrenciaInfo');
+            var pedidoRecorrenteCheckbox = $('#id_pedido_recorrente');
+            
+            var selectedOption = fornecedorSelect.find('option:selected');
+            var diaRecorrente = selectedOption.data('dia-recorrente');
+            
+            console.log('Atualizando informações de recorrência:');
+            console.log('- Fornecedor selecionado ID:', selectedOption.val());
+            console.log('- Dia recorrente configurado:', diaRecorrente);
+            console.log('- Checkbox atual estado:', pedidoRecorrenteCheckbox.prop('checked'));
+            
+            if (selectedOption.val() && diaRecorrente) {
+                console.log('Fornecedor válido com dia recorrente configurado. Habilitando checkbox.');
+                recorrenciaInfo.html('Será gerado automaticamente todo dia ' + diaRecorrente + ' do mês.');
+                pedidoRecorrenteCheckbox.prop('disabled', false);
+            } else if (!selectedOption.val()) {
+                console.log('Nenhum fornecedor selecionado. Desabilitando checkbox.');
+                recorrenciaInfo.html('Selecione um fornecedor com dia de recorrência configurado.');
+                pedidoRecorrenteCheckbox.prop('disabled', true);
+                pedidoRecorrenteCheckbox.prop('checked', false);
+            } else {
+                console.log('Fornecedor selecionado sem dia recorrente. Desabilitando checkbox.');
+                recorrenciaInfo.html('Este fornecedor não tem um dia de recorrência configurado.');
+                pedidoRecorrenteCheckbox.prop('disabled', true);
+                pedidoRecorrenteCheckbox.prop('checked', false);
+            }
+            
+            console.log('Estado final do checkbox:', pedidoRecorrenteCheckbox.prop('checked'), 'desabilitado:', pedidoRecorrenteCheckbox.prop('disabled'));
+        }
+
+        // Inicialização após o carregamento do documento
+        $(document).ready(function() {
+            // Inicializa a contagem e valores totais
+            atualizarTotais();
+            
+            // Inicializa as informações de recorrência
+            atualizarInfoRecorrencia();
+            
+            // Adiciona evento para mudança de fornecedor
+            $('#id_fornecedor').change(function() {
+                atualizarInfoRecorrencia();
+            });
+            
+            // Adiciona evento para mudança do checkbox de pedido recorrente
+            $('#id_pedido_recorrente').change(function() {
+                if ($(this).prop('checked')) {
+                    var fornecedor = $('#id_fornecedor option:selected').text();
+                    var diaRecorrente = $('#id_fornecedor option:selected').data('dia-recorrente');
+                    
+                    // Criar um alerta de confirmação
+                    var alertaRecorrencia = $('<div class="alert alert-info mt-2" id="alertaRecorrencia">')
+                        .html('<i class="bi bi-info-circle me-2"></i> ' +
+                              '<strong>Pedido Recorrente:</strong> Este pedido será automaticamente enviado ' +
+                              'todo dia ' + diaRecorrente + ' do mês para o fornecedor ' + fornecedor + '.');
+                    
+                    // Adicionar o alerta somente se não existir
+                    if ($('#alertaRecorrencia').length === 0) {
+                        $(this).closest('.form-check').after(alertaRecorrencia);
+                    }
+                    
+                    console.log('Checkbox de pedido recorrente MARCADO. Fornecedor:', fornecedor, 'Dia:', diaRecorrente);
+                } else {
+                    // Remover o alerta se existir
+                    $('#alertaRecorrencia').remove();
+                    console.log('Checkbox de pedido recorrente DESMARCADO');
+                }
+            });
+                
+            // ... código existente para outros eventos ...
+        });
+    }
+    
+    // Função para atualizar os totais
+    function atualizarTotais() {
+        let totalItens = 0;
+        let valorTotal = 0;
+        
+        $('.item-row').each(function() {
+            const quantidade = parseInt($(this).find('.quantidade-input').val()) || 0;
+            // Converte o valor formatado (com vírgula) para número
+            const valorUnitarioStr = $(this).find('.valor-unitario').val() || '0';
+            const valorUnitario = parseFloat(valorUnitarioStr.replace(',', '.')) || 0;
+            
+            totalItens += quantidade;
+            valorTotal += quantidade * valorUnitario;
+        });
+        
+        $('#totalItens').text(totalItens);
+        $('#valorTotal').text('R$ ' + valorTotal.toFixed(2).replace('.', ','));
+        
+        // Verificar se excede o orçamento
+        verificarOrcamento(valorTotal);
+    }
+    
+    // Função para verificar se o valor total excede o orçamento
+    function verificarOrcamento(valorTotal) {
+        const escolaSelect = $('#id_escola');
+        const escolaOption = escolaSelect.find('option:selected');
+        const budget = parseFloat(escolaOption.attr('data-budget') || 0);
+        
+        // Atualiza os valores no alerta
+        $('#valorOrcamento').text(budget.toFixed(2).replace('.', ','));
+        $('#valorAtual').text(valorTotal.toFixed(2).replace('.', ','));
+        
+        // Se o orçamento for maior que zero e o valor total exceder o orçamento
+        if (budget > 0 && valorTotal > budget) {
+            $('#alertaOrcamento').removeClass('d-none');
+            
+            // Desabilita o botão "Adicionar Item"
+            $('#btnAdicionarItem').prop('disabled', true).addClass('disabled')
+                .attr('title', 'Limite de orçamento excedido');
+            
+            // Desabilita o botão de submissão do formulário
+            $('#btnSubmitPedido').prop('disabled', true).addClass('disabled')
+                .attr('title', 'Limite de orçamento excedido');
+        } else {
+            $('#alertaOrcamento').addClass('d-none');
+            
+            // Reabilita os botões
+            $('#btnAdicionarItem').prop('disabled', false).removeClass('disabled')
+                .attr('title', '');
+            $('#btnSubmitPedido').prop('disabled', false).removeClass('disabled')
+                .attr('title', '');
+        }
+    }
+    
+    // Quando o contrato for alterado, verificar orçamento
+    $('#id_escola').change(function() {
+        atualizarTotais();
+    });
+
+    // Quando o documento estiver pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obter referência ao formulário
+        const formPedido = document.getElementById('formPedido');
+        
+        // Adicionar evento de submit ao formulário
+        formPedido.addEventListener('submit', function(event) {
+            // Verificar se há pelo menos um item
+            const produtos = document.querySelectorAll('.produto-select');
+            const quantidades = document.querySelectorAll('.quantidade-input');
+            let itemValido = false;
+            
+            for (let i = 0; i < produtos.length; i++) {
+                if (produtos[i].value && quantidades[i].value && parseInt(quantidades[i].value) > 0) {
+                    itemValido = true;
+                    break;
+                }
+            }
+            
+            if (!itemValido) {
+                event.preventDefault();
+                alert('Por favor, adicione pelo menos um item ao pedido.');
+                return false;
+            }
+            
+            // Verificar o checkbox de pedido recorrente
+            const checkboxRecorrente = document.getElementById('id_pedido_recorrente');
+            const fornecedorSelect = document.getElementById('id_fornecedor');
+            
+            // Adicionar um campo hidden para garantir que o formulário sempre envie o valor do checkbox,
+            // mesmo quando o checkbox está desabilitado
+            const hiddenInputRecorrente = document.createElement('input');
+            hiddenInputRecorrente.type = 'hidden';
+            hiddenInputRecorrente.name = 'pedido_recorrente_valor';
+            hiddenInputRecorrente.value = checkboxRecorrente.checked ? 'on' : 'off';
+            formPedido.appendChild(hiddenInputRecorrente);
+            
+            console.log('Valor do checkbox recorrente: ' + (checkboxRecorrente.checked ? 'MARCADO' : 'DESMARCADO'));
+            console.log('Campo hidden adicionado com valor: ' + hiddenInputRecorrente.value);
+            
+            if (checkboxRecorrente && checkboxRecorrente.checked) {
+                console.log('Validando pedido recorrente antes do envio...');
+                
+                // Verificar se fornecedor está selecionado
+                if (!fornecedorSelect.value) {
+                    event.preventDefault();
+                    alert('Para criar um pedido recorrente, é necessário selecionar um fornecedor.');
+                    return false;
+                }
+                
+                // Obter o texto do fornecedor selecionado
+                const fornecedorTexto = fornecedorSelect.options[fornecedorSelect.selectedIndex].text;
+                
+                // Criar um elemento de entrada oculto para garantir que o valor seja enviado
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'pedido_recorrente_confirmado';
+                hiddenInput.value = 'true';
+                formPedido.appendChild(hiddenInput);
+                
+                console.log('Pedido recorrente confirmado e pronto para envio.');
+            }
+            
+            // Se tudo estiver OK, o formulário será enviado
+            return true;
+        });
+    });
+
+    // Função para registrar dados do formulário no momento do envio
+    function logFormSubmit() {
+        console.log('Formulário sendo enviado:');
+        console.log('- Checkbox pedido_recorrente marcado:', $('#id_pedido_recorrente').prop('checked'));
+        console.log('- Checkbox pedido_recorrente desabilitado:', $('#id_pedido_recorrente').prop('disabled'));
+        console.log('- Fornecedor selecionado ID:', $('#id_fornecedor').val());
+        console.log('- Fornecedor tem dia recorrente:', $('#id_fornecedor option:selected').data('dia-recorrente'));
+        
+        // Garantimos que o checkbox não desabilitado está enviando o valor correto
+        if ($('#id_pedido_recorrente').prop('checked') && !$('#id_pedido_recorrente').prop('disabled')) {
+            console.log('IMPORTANTE: Pedido será salvo como RECORRENTE!');
+            
+            // Verificar se o fornecedor tem dia recorrente configurado
+            if (!$('#id_fornecedor option:selected').data('dia-recorrente')) {
+                console.warn('ALERTA: Fornecedor selecionado não tem dia de recorrência configurado!');
+            }
+        }
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,28 @@
+                    <td>{{ item.quantidade }}</td>
+                    <td>R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                    <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                    <td>
+                        {% if item.produto %}
+                            {{ item.produto.nome }}
+                        {% else %}
+                            {{ item.descricao_produto }}
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'orcamentos:detalhe' orcamento.id %}" class="btn btn-sm btn-outline-primary me-1" title="Visualizar">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if orcamento.status == 'pendente' %}
+                            <a href="{% url 'orcamentos:editar' orcamento.id %}" class="btn btn-sm btn-outline-warning me-1" title="Editar">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <a href="{% url 'orcamentos:excluir' orcamento.id %}" class="btn btn-sm btn-outline-danger me-1" title="Excluir" onclick="return confirm('Confirma a exclusão deste orçamento?');">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            <a href="{% url 'orcamentos:aprovar' orcamento.id %}" class="btn btn-sm btn-outline-success me-1" title="Aprovar">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            <a href="{% url 'orcamentos:rejeitar' orcamento.id %}" class="btn btn-sm btn-outline-danger" title="Rejeitar">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% endif %} 
