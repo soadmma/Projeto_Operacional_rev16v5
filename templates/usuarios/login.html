@@ -1,273 +1,116 @@
-{% extends 'base/base.html' %}
-{% load crispy_forms_tags %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — CyberGO</title>
 
-{% block title %}Login - CyberGo{% endblock %}
+    <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
 
-{% block navbar %}
-<nav class="navbar">
-    <div class="container">
-        <a class="navbar-brand" href="#">
-            <img src="{% static 'images/logo.png' %}" alt="Logo CyberGo"
-                 style="height: 40px; margin-right: 10px; object-fit: contain;">
-            <span style="font-weight: 700;">CyberGo</span>
-            <span class="ms-2 text-muted" style="font-size: 0.9em; font-weight: 500;">Sistema de Pedidos</span>
-        </a>
-    </div>
-</nav>
-{% endblock %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-{% block extracss %}
-<style>
-    .login-container {
-        display: flex;
-        min-height: calc(100vh - 140px);
-        align-items: center;
-        justify-content: center;
-        padding: 2rem 0;
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    .login-wrapper {
-        width: 100%;
-        max-width: 960px;
-    }
-
-    .login-card {
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-        background: var(--surface);
-        box-shadow: var(--shadow-md);
-    }
-
-    .login-sidebar {
-        position: relative;
-        overflow: hidden;
-        padding: 3rem 2.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        color: #fff;
-        background: var(--primary-gradient);
-    }
-
-    .login-sidebar::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(circle at 85% 10%, rgba(255,255,255,0.18) 0%, transparent 45%),
-            radial-gradient(circle at 10% 90%, rgba(255,255,255,0.12) 0%, transparent 45%);
-        pointer-events: none;
-    }
-
-    .login-sidebar h3 {
-        font-weight: 700;
-        margin-bottom: 1rem;
-        font-size: 1.85rem;
-        color: #fff;
-        position: relative;
-        z-index: 1;
-    }
-
-    .login-sidebar p {
-        font-size: 1rem;
-        opacity: 0.92;
-        line-height: 1.6;
-        margin-bottom: 2rem;
-        position: relative;
-        z-index: 1;
-    }
-
-    .login-features {
-        position: relative;
-        z-index: 1;
-    }
-
-    .feature-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1.1rem;
-    }
-
-    .feature-icon {
-        background-color: rgba(255, 255, 255, 0.16);
-        width: 40px;
-        height: 40px;
-        border-radius: var(--radius-sm);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 0.85rem;
-        font-size: 1.05rem;
-        flex-shrink: 0;
-    }
-
-    .feature-item span {
-        font-size: 0.95rem;
-        font-weight: 500;
-    }
-
-    .login-form {
-        padding: 3rem 2.5rem;
-        background: var(--surface);
-    }
-
-    .login-form h4 {
-        color: var(--text);
-        font-weight: 700;
-        margin-bottom: 0.35rem;
-        font-size: 1.5rem;
-    }
-
-    .login-form .login-subtitle {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-        margin-bottom: 2rem;
-    }
-
-    .login-form .form-group {
-        position: relative;
-        margin-bottom: 1rem;
-    }
-
-    .login-form .form-group .form-icon {
-        position: absolute;
-        top: 50%;
-        left: 14px;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-        font-size: 1.05rem;
-        pointer-events: none;
-        transition: color var(--transition);
-    }
-
-    .login-form .form-control {
-        height: 48px;
-        padding-left: 2.5rem;
-        background-color: var(--surface-alt);
-        border-color: var(--border);
-    }
-
-    .login-form .form-control:focus {
-        background-color: var(--surface);
-        border-color: var(--primary);
-    }
-
-    .login-form .form-control:focus + .form-icon,
-    .login-form .form-group:focus-within .form-icon {
-        color: var(--primary);
-    }
-
-    .login-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        width: 100%;
-        height: 48px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        font-size: 0.95rem;
-    }
-
-    .forgot-password {
-        text-align: center;
-        margin-top: 1.25rem;
-    }
-
-    .forgot-password a {
-        color: var(--text-muted);
-        font-weight: 500;
-        font-size: 0.9rem;
-    }
-
-    .forgot-password a:hover {
-        color: var(--primary);
-    }
-
-    @media (max-width: 991.98px) {
-        .login-sidebar {
-            display: none;
-        }
-        .login-form {
-            padding: 2.5rem 1.75rem;
-        }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="login-container">
-    <div class="login-wrapper">
-        <div class="login-card">
-            <div class="row g-0">
-                <div class="col-lg-6 login-sidebar">
-                    <h3>Bem-vindo à CyberGo</h3>
-                    <p>Acesse o sistema para gerenciar pedidos, contratos e produtos de forma eficiente e organizada.</p>
-
-                    <div class="login-features">
-                        <div class="feature-item">
-                            <span class="feature-icon"><i class="bi bi-cart"></i></span>
-                            <span>Gerencie seus pedidos com facilidade</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon"><i class="bi bi-graph-up-arrow"></i></span>
-                            <span>Acompanhe relatórios e indicadores</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon"><i class="bi bi-building"></i></span>
-                            <span>Organize pedidos por contrato</span>
-                        </div>
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+</head>
+<body>
+    <div class="auth-shell">
+        <section class="auth-side">
+            <a class="auth-brand" href="#" aria-label="CyberGO">
+                <img src="{% static 'images/logo.png' %}" alt="CyberGO">
+                <div>
+                    <div>CyberGO</div>
+                    <div style="font-size: 0.75rem; font-weight: 400; color: rgba(255,255,255,0.7); letter-spacing: 0.04em; text-transform: uppercase;">
+                        Sistema de Pedidos
                     </div>
                 </div>
+            </a>
 
-                <div class="col-lg-6 login-form">
-                    <h4>Acesso ao Sistema</h4>
-                    <p class="login-subtitle">Informe suas credenciais para continuar.</p>
+            <div>
+                <h1>Gestão operacional simples, rápida e auditável.</h1>
+                <p class="auth-lead">
+                    Centralize pedidos, contratos e fornecedores em um único lugar.
+                    Controle total sobre o fluxo operacional da sua empresa.
+                </p>
 
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <form method="post">
-                        {% csrf_token %}
-
-                        <div class="mb-3">
-                            <label for="id_username" class="form-label">Usuário</label>
-                            <div class="form-group">
-                                <input type="text" name="username" class="form-control" id="id_username"
-                                       placeholder="Seu usuário" autocomplete="username" required autofocus>
-                                <span class="form-icon"><i class="bi bi-person"></i></span>
-                            </div>
+                <ul class="auth-features">
+                    <li>
+                        <span class="feature-icon"><i class="bi bi-cart-check"></i></span>
+                        <div>
+                            <strong>Pedidos centralizados</strong><br>
+                            <span style="color: rgba(255,255,255,0.75);">Acompanhe status e histórico em tempo real.</span>
                         </div>
-
-                        <div class="mb-2">
-                            <label for="id_password" class="form-label">Senha</label>
-                            <div class="form-group">
-                                <input type="password" name="password" class="form-control" id="id_password"
-                                       placeholder="Sua senha" autocomplete="current-password" required>
-                                <span class="form-icon"><i class="bi bi-lock"></i></span>
-                            </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                        <div>
+                            <strong>Indicadores de gestão</strong><br>
+                            <span style="color: rgba(255,255,255,0.75);">Visão gerencial por contrato, produto ou fornecedor.</span>
                         </div>
-
-                        <button type="submit" class="btn btn-primary login-btn mt-3">
-                            <i class="bi bi-box-arrow-in-right"></i> Entrar
-                        </button>
-
-                        <div class="forgot-password">
-                            <a href="#">Esqueceu sua senha?</a>
+                    </li>
+                    <li>
+                        <span class="feature-icon"><i class="bi bi-shield-check"></i></span>
+                        <div>
+                            <strong>Controle e auditoria</strong><br>
+                            <span style="color: rgba(255,255,255,0.75);">Permissões por perfil e log de alterações.</span>
                         </div>
-                    </form>
-                </div>
+                    </li>
+                </ul>
             </div>
-        </div>
+
+            <div class="auth-legal">
+                &copy; {% now "Y" %} CyberForce. Todos os direitos reservados.
+            </div>
+        </section>
+
+        <section class="auth-form-wrap">
+            <div class="auth-card">
+                <h2>Acessar o sistema</h2>
+                <p class="lead">Informe suas credenciais para continuar.</p>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} mb-3">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Usuário</label>
+                        <div class="form-group">
+                            <span class="form-icon"><i class="bi bi-person"></i></span>
+                            <input type="text" name="username" class="form-control" id="id_username"
+                                   placeholder="Seu usuário" autocomplete="username" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="id_password" class="form-label">Senha</label>
+                        <div class="form-group">
+                            <span class="form-icon"><i class="bi bi-lock"></i></span>
+                            <input type="password" name="password" class="form-control" id="id_password"
+                                   placeholder="Sua senha" autocomplete="current-password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary login-btn">
+                        <i class="bi bi-box-arrow-in-right"></i> Entrar
+                    </button>
+
+                    <div class="form-helper">
+                        <a href="#">Esqueceu sua senha?</a>
+                    </div>
+                </form>
+            </div>
+        </section>
     </div>
-</div>
-{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
