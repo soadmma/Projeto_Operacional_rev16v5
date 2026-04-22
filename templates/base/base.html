@@ -22,523 +22,20 @@
     
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary: #4303f0;
-            --primary-dark: #3700cb;
-            --primary-light: #5315ff;
-            --purple-gradient: linear-gradient(135deg, #4303f0, #7517f5, #4303f0);
-            --accent: rgba(255, 255, 255, 0.9);
-            --text-color: #333;
-            --text-muted: #717790;
-            --border-radius-sm: 12px;
-            --border-radius-md: 24px;
-            --border-radius-lg: 32px;
-            --box-shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.07);
-            --box-shadow-md: 0 15px 50px rgba(0, 0, 0, 0.1);
-            --box-shadow-neu: 
-                10px 10px 20px rgba(0, 0, 0, 0.05),
-                -10px -10px 20px rgba(255, 255, 255, 0.8);
-            --transition-smooth: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        
-        * {
-            font-family: 'Poppins', sans-serif;
-        }
-        
-        body {
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(76, 0, 255, 0.1) 0%, rgba(76, 0, 255, 0.03) 70%),
-                radial-gradient(circle at 80% 80%, rgba(94, 221, 230, 0.1) 0%, rgba(94, 221, 230, 0.03) 70%);
-            background-color: #f8faff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Animated background elements */
-        .bg-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-            pointer-events: none;
-        }
 
-        .shape {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.4;
-        }
+    <!-- Tema CyberGo -->
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
 
-        .shape-1 {
-            width: 500px;
-            height: 500px;
-            top: -250px;
-            left: -200px;
-            background: linear-gradient(135deg, #e661ff, #7517f5);
-            animation: floatAnimation 20s ease-in-out infinite alternate;
-        }
-
-        .shape-2 {
-            width: 400px;
-            height: 400px;
-            bottom: -150px;
-            right: -150px;
-            background: linear-gradient(135deg, #5edfff, #3c96ff);
-            animation: floatAnimation 15s ease-in-out infinite alternate-reverse;
-        }
-
-        .shape-3 {
-            width: 300px;
-            height: 300px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #fcff6c, #ff9c37);
-            opacity: 0.2;
-            animation: pulseAnimation 10s ease-in-out infinite;
-        }
-
-        @keyframes floatAnimation {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-            }
-            100% {
-                transform: translate(30px, 50px) rotate(15deg);
-            }
-        }
-
-        @keyframes pulseAnimation {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(0.8);
-                opacity: 0.2;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.1);
-                opacity: 0.3;
-            }
-        }
-        
-        /* Navbar modernizado */
-        .navbar {
-            background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 0.75rem 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border-radius: 0 0 16px 16px;
-            margin: 0 8px;
-        }
-        
-        .navbar-brand {
-            color: var(--primary) !important;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            transition: var(--transition-smooth);
-        }
-        
-        .navbar-brand:hover {
-            transform: translateY(-2px);
-        }
-        
-        .navbar-brand img {
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-            transition: var(--transition-smooth);
-        }
-        
-        .navbar-brand:hover img {
-            transform: scale(1.05);
-        }
-        
-        .nav-link {
-            color: var(--text-color) !important;
-            padding: 0.75rem 1rem !important;
-            position: relative;
-            margin: 0 0.25rem;
-            font-weight: 500;
-            border-radius: var(--border-radius-sm);
-            transition: var(--transition-smooth);
-        }
-        
-        .nav-link:hover {
-            color: var(--primary) !important;
-            background-color: rgba(67, 3, 240, 0.08);
-            transform: translateY(-2px);
-        }
-        
-        .nav-item .active {
-            color: #fff !important;
-            background: var(--purple-gradient);
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(67, 3, 240, 0.25);
-        }
-        
-        .nav-item .active i {
-            color: #fff !important;
-        }
-        
-        .navbar-toggler {
-            border: none;
-            padding: 0.5rem;
-            background-color: rgba(67, 3, 240, 0.1);
-            border-radius: var(--border-radius-sm);
-            transition: var(--transition-smooth);
-        }
-        
-        .navbar-toggler:hover {
-            background-color: rgba(67, 3, 240, 0.2);
-        }
-        
-        .dropdown-menu {
-            border: none;
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--box-shadow-md);
-            padding: 0.75rem 0;
-            margin-top: 0.5rem;
-            animation: fadeInDown 0.3s ease;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 9999;
-        }
-        
-        .dropdown-item {
-            padding: 0.6rem 1.5rem;
-            transition: all 0.2s ease;
-            position: relative;
-            border-radius: var(--border-radius-sm);
-            margin: 0 0.5rem;
-            width: auto;
-        }
-        
-        .dropdown-item:hover {
-            background-color: rgba(67, 3, 240, 0.1);
-            padding-left: 1.8rem;
-            transform: translateY(-2px);
-        }
-        
-        .dropdown-item i {
-            opacity: 0.8;
-            transition: all 0.2s ease;
-        }
-        
-        .dropdown-item:hover i {
-            opacity: 1;
-            color: var(--primary);
-        }
-        
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Cards com efeito neumórfico */
-        .card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: none;
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--box-shadow-sm);
-            transition: var(--transition-smooth);
-            overflow: hidden;
-            transform-style: preserve-3d;
-            transform: translateY(0) rotateX(0deg) scale(1);
-        }
-        
-        .card:hover {
-            transform: translateY(-10px) rotateX(2deg) scale(1.01);
-            box-shadow: 0 25px 60px rgba(67, 3, 240, 0.18);
-        }
-        
-        .btn-primary {
-            background: var(--purple-gradient);
-            border: none;
-            border-radius: var(--border-radius-sm);
-            padding: 0.6rem 1.5rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            box-shadow: 0 8px 20px rgba(67, 3, 240, 0.3);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            transform: translateZ(0);
-        }
-        
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            z-index: -1;
-            transition: all 0.6s ease;
-        }
-        
-        .btn-primary:hover {
-            box-shadow: 0 10px 25px rgba(67, 3, 240, 0.4);
-            transform: translateY(-5px) translateZ(0);
-        }
-        
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-        
-        .btn-primary:active {
-            transform: translateY(-2px) translateZ(0);
-            box-shadow: 0 5px 15px rgba(67, 3, 240, 0.3);
-        }
-        
-        .btn-secondary {
-            background-color: #fff;
-            color: var(--primary);
-            border: 2px solid var(--primary);
-            border-radius: var(--border-radius-sm);
-            font-weight: 600;
-            transition: var(--transition-smooth);
-        }
-        
-        .btn-secondary:hover {
-            background-color: rgba(67, 3, 240, 0.1);
-            border-color: var(--primary-dark);
-            color: var(--primary-dark);
-            transform: translateY(-3px);
-        }
-        
-        .btn-accent {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
-            color: rgb(243, 240, 240);
-            border-radius: var(--border-radius-sm);
-            font-weight: 600;
-            transition: var(--transition-smooth);
-        }
-        
-        .btn-accent:hover {
-            background-color: #D05C3D;
-            border-color: #D05C3D;
-            color: white;
-            transform: translateY(-3px);
-        }
-        
-        .table-container {
-            background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--box-shadow-md);
-            padding: 20px;
-            margin-bottom: 30px;
-            transition: var(--transition-smooth);
-        }
-        
-        .table-container:hover {
-            box-shadow: 0 25px 60px rgba(67, 3, 240, 0.15);
-            transform: translateY(-5px);
-        }
-        
-        .page-header {
-            background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--box-shadow-sm);
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: var(--transition-smooth);
-        }
-        
-        .page-header:hover {
-            box-shadow: 0 15px 40px rgba(67, 3, 240, 0.12);
-            transform: translateY(-3px);
-        }
-        
-        .dashboard-card {
-            border-left: 5px solid var(--primary);
-        }
-        
-        .dashboard-card.success {
-            border-left-color: #28a745;
-        }
-        
-        .dashboard-card.warning {
-            border-left-color: #ffc107;
-        }
-        
-        .dashboard-card.danger {
-            border-left-color: #dc3545;
-        }
-        
-        .dashboard-card.info {
-            border-left-color: var(--primary-light);
-        }
-        
-        /* Estilos para alertas */
-        .alert {
-            position: relative;
-            overflow: hidden;
-            animation: slideInDown 0.5s ease-out;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--box-shadow-sm);
-        }
-        
-        .alert-error, .alert-danger {
-            background-color: rgba(255, 242, 242, 0.9);
-            color: #b71c1c;
-            font-weight: 500;
-        }
-        
-        .alert-warning {
-            background-color: rgba(255, 253, 231, 0.9);
-            color: #ff6f00;
-            font-weight: 500;
-        }
-        
-        .alert-success {
-            background-color: rgba(241, 248, 233, 0.9);
-            color: #33691e;
-            font-weight: 500;
-        }
-        
-        .alert-info {
-            background-color: rgba(227, 242, 253, 0.9);
-            color: #0d47a1;
-            font-weight: 500;
-        }
-        
-        .alert .btn-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-        
-        @keyframes slideInDown {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        /* Estilo para o footer */
-        footer {
-            margin-top: auto;
-            background-color: rgba(41, 50, 65, 0.85);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            padding: 1rem 0;
-            border-radius: 16px 16px 0 0;
-            margin: 0 8px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Menu dropdown do usuário específico */
-        .navbar .dropdown-menu {
-            position: absolute !important;
-            z-index: 9999;
-        }
-        
-        .novo-pedido-btn {
-            background: var(--purple-gradient);
-            transition: all 0.3s ease;
-            transform: translateY(0);
-            font-weight: 600;
-            font-size: 1.05rem;
-            box-shadow: 0 8px 15px rgba(67, 3, 240, 0.3) !important;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .novo-pedido-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: all 0.6s ease;
-        }
-        
-        .novo-pedido-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 20px rgba(67, 3, 240, 0.4) !important;
-        }
-        
-        .novo-pedido-btn:hover::before {
-            left: 100%;
-        }
-        
-        /* Garantir posicionamento correto do dropdown */
-        .nav-item.dropdown {
-            position: relative !important;
-        }
-        
-        /* Garantir que o dropdown de admin sempre esteja visível na frente de tudo */
-        .dropdown-menu {
-            z-index: 9999999 !important;
-            position: absolute !important;
-            box-shadow: rgba(0, 0, 0, 0.3) 0px 10px 30px !important;
-        }
-
-        .navbar .nav-item.dropdown .dropdown-menu {
-            z-index: 9999999 !important;
-            position: absolute !important;
-            transform: none !important;
-            display: none;
-        }
-
-        .navbar .nav-item.dropdown.show .dropdown-menu {
-            display: block !important;
-            top: 100% !important;
-            left: auto !important;
-            right: 0 !important;
-        }
-    </style>
-    
     {% block extracss %}{% endblock %}
 </head>
 <body>
-    <div class="bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-    </div>
-    
     {% block navbar %}
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand" href="{% url 'core:home' %}">
-                <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" style="height: 60px; margin-right: 15px; object-fit: contain;">
-                <span style="font-size: 1.2em; font-weight: 700;">CyberGO</span> <span class="ms-1 fw-normal" style="opacity: 0.9; font-size: 1em;"></span>
+                <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" style="height: 44px; margin-right: 12px; object-fit: contain;">
+                <span style="font-size: 1.15em; font-weight: 700;">CyberGO</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -637,12 +134,12 @@
                     
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown ms-1">
-                        <a class="nav-link d-flex align-items-center" href="#" id="customDropdown" role="button" 
+                        <a class="nav-link d-flex align-items-center" href="#" id="customDropdown" role="button"
                            onclick="toggleCustomDropdown(event)">
-                            <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-2" 
-                                 style="width: 32px; height: 32px; overflow: hidden;">
+                            <span class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                                 style="width: 32px; height: 32px; background-color: var(--primary-soft);">
                                 <i class="bi bi-person-fill text-primary"></i>
-                            </div>
+                            </span>
                             {% if user.is_staff %}admin{% else %}{{ user.username }}{% endif %} <i class="bi bi-caret-down-fill ms-1"></i>
                         </a>
                     </li>
@@ -663,16 +160,16 @@
     <div class="container py-4">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 rounded-3 shadow-sm {% if message.tags == 'error' %}border-start border-danger border-5{% elif message.tags == 'warning' %}border-start border-warning border-5{% elif message.tags == 'success' %}border-start border-success border-5{% elif message.tags == 'info' %}border-start border-info border-5{% endif %}" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
                     <div class="d-flex align-items-center">
                         {% if message.tags == 'error' %}
-                            <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+                            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
                         {% elif message.tags == 'warning' %}
-                            <i class="bi bi-exclamation-circle-fill fs-4 me-2"></i>
+                            <i class="bi bi-exclamation-circle-fill fs-5 me-2"></i>
                         {% elif message.tags == 'success' %}
-                            <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
                         {% elif message.tags == 'info' %}
-                            <i class="bi bi-info-circle-fill fs-4 me-2"></i>
+                            <i class="bi bi-info-circle-fill fs-5 me-2"></i>
                         {% endif %}
                         <div>{{ message }}</div>
                     </div>
@@ -680,7 +177,7 @@
                 </div>
             {% endfor %}
         {% endif %}
-        
+
         {% block content %}{% endblock %}
     </div>
       
