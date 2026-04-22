@@ -296,6 +296,10 @@ hr { border: 0; border-top: 1px solid var(--border); margin: var(--space-5) 0; }
     transition: margin-left var(--transition);
 }
 
+.app-shell--no-sidebar .app-main {
+    margin-left: 0;
+}
+
 .app-topbar {
     height: var(--topbar-height);
     background: var(--surface);

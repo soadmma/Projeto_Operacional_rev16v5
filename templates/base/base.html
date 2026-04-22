@@ -31,7 +31,7 @@
     {% block extracss %}{% endblock %}
 </head>
 <body>
-    <div class="app-shell">
+    <div class="app-shell{% if not user.is_authenticated %} app-shell--no-sidebar{% endif %}">
         {% block sidebar %}
         {% if user.is_authenticated %}
         <aside class="app-sidebar" id="appSidebar">
@@ -307,8 +307,8 @@
             var button = document.getElementById('customDropdown');
             if (!menu || !button) return;
             var rect = button.getBoundingClientRect();
-            menu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
-            menu.style.left = (rect.right - 240 + window.scrollX) + 'px';
+            menu.style.top = (rect.bottom + 6) + 'px';
+            menu.style.left = (rect.right - 240) + 'px';
             menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
         }
 
