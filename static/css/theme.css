@@ -247,26 +247,17 @@ a:hover {
     padding: 0.85rem 1.25rem;
 }
 
-/* Dashboard cards com indicador colorido */
+/* Dashboard cards com indicador colorido.
+ * Uso de !important para sobrescrever a utilitária `.border-0` do Bootstrap
+ * que já está aplicada nos templates existentes. */
 .dashboard-card {
-    border-left: 4px solid var(--primary);
+    border-left: 4px solid var(--primary) !important;
 }
 
-.dashboard-card.info {
-    border-left-color: var(--info);
-}
-
-.dashboard-card.success {
-    border-left-color: var(--success);
-}
-
-.dashboard-card.warning {
-    border-left-color: var(--warning);
-}
-
-.dashboard-card.danger {
-    border-left-color: var(--danger);
-}
+.dashboard-card.info    { border-left-color: var(--info)    !important; }
+.dashboard-card.success { border-left-color: var(--success) !important; }
+.dashboard-card.warning { border-left-color: var(--warning) !important; }
+.dashboard-card.danger  { border-left-color: var(--danger)  !important; }
 
 .icon-circle {
     width: 48px;
